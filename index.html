@@ -1,0 +1,4430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SynthLab — Explorador de Síntesis de Sonido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS VARIABLES & THEME
+   ============================================================ */
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a24;
+  --bg4: #22222f;
+  --card: #16161f;
+  --border: #2a2a3a;
+  --text: #e8e8f0;
+  --text2: #9090a8;
+  --text3: #5a5a72;
+  --accent: #7c6af5;
+  --accent2: #a855f7;
+  --accent3: #06b6d4;
+  --accent4: #f472b6;
+  --green: #4ade80;
+  --orange: #fb923c;
+  --yellow: #facc15;
+  --red: #f87171;
+  --glow: rgba(124,106,245,0.15);
+  --glow2: rgba(168,85,247,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+body.light {
+  --bg: #f0eff8;
+  --bg2: #e8e6f5;
+  --bg3: #ddd9f0;
+  --bg4: #ccc8e8;
+  --card: #fafafa;
+  --border: #ccc8e8;
+  --text: #1a1a2e;
+  --text2: #4a4a6a;
+  --text3: #9090b0;
+  --glow: rgba(124,106,245,0.08);
+  --glow2: rgba(168,85,247,0.06);
+  --shadow: 0 4px 24px rgba(124,106,245,0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,10,15,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  transition: background var(--transition);
+}
+
+body.light header { background: rgba(240,239,248,0.92); }
+
+.logo {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+
+.logo span { color: var(--accent); }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-btn {
+  width: 36px; height: 36px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all var(--transition);
+  color: var(--text);
+}
+.theme-btn:hover { border-color: var(--accent); background: var(--glow); }
+
+.help-badge {
+  font-size: 11px;
+  background: var(--glow);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: var(--mono);
+}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+.app-container {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 60px);
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 16px 10px;
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  transition: background var(--transition);
+}
+
+.sidebar-section {
+  font-size: 10px;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  padding: 8px 10px 4px;
+  margin-top: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--glow);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nav-item .nav-icon {
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.nav-item .nav-number {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-left: auto;
+}
+
+.nav-item.active .nav-number { color: var(--accent); }
+
+/* CONTENT AREA */
+.content {
+  padding: 28px;
+  overflow-y: auto;
+}
+
+/* ============================================================
+   SYNTH PANEL
+   ============================================================ */
+.synth-panel { display: none; }
+.synth-panel.active { display: block; }
+
+.panel-header {
+  margin-bottom: 24px;
+}
+
+.panel-title {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-subtitle {
+  font-size: 14px;
+  color: var(--text2);
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+.panel-tag {
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--glow);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+/* ============================================================
+   GRID LAYOUT FOR SYNTH
+   ============================================================ */
+.synth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.synth-grid-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--glow);
+}
+
+.card-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-title::before {
+  content: '';
+  width: 3px; height: 14px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   BLOCK DIAGRAM
+   ============================================================ */
+.block-diagram {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.block-diagram canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ============================================================
+   PARAMETER CONTROLS
+   ============================================================ */
+.param-group {
+  margin-bottom: 16px;
+}
+
+.param-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.param-name { font-weight: 500; color: var(--text2); }
+.param-value {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--glow);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg4);
+  outline: none;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+input[type="range"]:focus { background: var(--bg3); }
+
+select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--sans);
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+select:focus { border-color: var(--accent); }
+
+/* ============================================================
+   PLAY BUTTON & TRANSPORT
+   ============================================================ */
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--bg3);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.play-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: all var(--transition);
+  box-shadow: 0 0 20px var(--glow2);
+  color: white;
+  flex-shrink: 0;
+}
+
+.play-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 30px rgba(124,106,245,0.5);
+}
+
+.play-btn.playing {
+  background: linear-gradient(135deg, var(--red), #e11d48);
+  box-shadow: 0 0 20px rgba(248,113,113,0.3);
+  animation: pulse-play 1s ease-in-out infinite;
+}
+
+@keyframes pulse-play {
+  0%,100% { box-shadow: 0 0 20px rgba(248,113,113,0.3); }
+  50% { box-shadow: 0 0 35px rgba(248,113,113,0.6); }
+}
+
+.transport-info {
+  flex: 1;
+}
+
+.transport-status {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.transport-status span {
+  color: var(--green);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+.transport-hint {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   OSCILLOSCOPE & VISUALIZER
+   ============================================================ */
+.visualizer-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.visualizer-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.visualizer-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), transparent);
+}
+
+.viz-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  margin-bottom: 10px;
+}
+
+canvas.scope {
+  width: 100%;
+  height: 100px;
+  display: block;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+canvas.fft {
+  width: 100%;
+  height: 100px;
+  display: block;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+/* ============================================================
+   INFO BOX (DIDÁCTICA)
+   ============================================================ */
+.info-box {
+  background: linear-gradient(135deg, var(--glow), var(--glow2));
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-box::before {
+  content: '💡';
+  position: absolute;
+  right: 16px; top: 12px;
+  font-size: 22px;
+  opacity: 0.4;
+}
+
+.info-box-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.info-box p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.65;
+}
+
+.info-box ul {
+  margin-top: 8px;
+  padding-left: 16px;
+}
+
+.info-box ul li {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   BLOCK DIAGRAM SVG STYLES
+   ============================================================ */
+.diagram-container {
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.diagram-svg {
+  display: block;
+  min-width: 500px;
+}
+
+/* Block nodes */
+.block-rect {
+  rx: 6; ry: 6;
+  stroke-width: 1.5;
+}
+
+.block-osc { fill: rgba(124,106,245,0.15); stroke: var(--accent); }
+.block-filter { fill: rgba(6,182,212,0.15); stroke: var(--accent3); }
+.block-env { fill: rgba(74,222,128,0.15); stroke: var(--green); }
+.block-lfo { fill: rgba(250,204,21,0.15); stroke: var(--yellow); }
+.block-out { fill: rgba(248,113,113,0.15); stroke: var(--red); }
+.block-mod { fill: rgba(244,114,182,0.15); stroke: var(--accent4); }
+.block-mix { fill: rgba(251,146,60,0.15); stroke: var(--orange); }
+.block-sample { fill: rgba(124,106,245,0.15); stroke: var(--accent2); }
+.block-grain { fill: rgba(168,85,247,0.15); stroke: var(--accent2); }
+.block-wave { fill: rgba(6,182,212,0.12); stroke: var(--accent3); }
+
+.block-text {
+  fill: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.block-sub {
+  fill: var(--text2);
+  font-size: 8px;
+  font-weight: 400;
+}
+
+.conn-line {
+  stroke: var(--border);
+  stroke-width: 1.5;
+  fill: none;
+  marker-end: url(#arrow);
+}
+
+.conn-line.audio { stroke: var(--accent); stroke-width: 2; }
+.conn-line.mod-line { stroke: var(--yellow); stroke-width: 1.5; stroke-dasharray: 4,3; }
+.conn-line.cv { stroke: var(--green); stroke-width: 1.5; stroke-dasharray: 2,2; }
+
+/* ============================================================
+   ADSR VISUAL
+   ============================================================ */
+.adsr-visual {
+  height: 60px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============================================================
+   WAVEFORM SELECTOR
+   ============================================================ */
+.wave-selector {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.wave-btn {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text2);
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.wave-btn:hover { border-color: var(--accent); color: var(--accent); }
+.wave-btn.active { border-color: var(--accent); background: var(--glow); color: var(--accent); }
+
+/* ============================================================
+   HARMONICS DISPLAY (ADDITIVE)
+   ============================================================ */
+.harmonics-grid {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  height: 80px;
+  padding: 6px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.harmonic-bar {
+  flex: 1;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+  cursor: ns-resize;
+  transition: background var(--transition);
+  position: relative;
+  min-height: 4px;
+}
+
+.harmonic-bar:hover { background: var(--accent2); }
+
+.harmonic-bar::after {
+  content: attr(data-n);
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-family: var(--mono);
+  color: var(--text3);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 11px;
+  color: var(--text3);
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .app-container {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: relative;
+    top: 0;
+    height: auto;
+    display: flex;
+    overflow-x: auto;
+    padding: 8px;
+    gap: 4px;
+    flex-wrap: nowrap;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-section { display: none; }
+  .nav-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+  .nav-item .nav-number { display: none; }
+  .synth-grid { grid-template-columns: 1fr; }
+  .synth-grid-3 { grid-template-columns: 1fr 1fr; }
+  .visualizer-section { grid-template-columns: 1fr; }
+  .content { padding: 16px; }
+}
+
+@media (max-width: 600px) {
+  .synth-grid-3 { grid-template-columns: 1fr; }
+  .panel-title { font-size: 20px; }
+  header { padding: 0 14px; }
+  .help-badge { display: none; }
+}
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+.full-width { grid-column: 1 / -1; }
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+.badge-osc { background: rgba(124,106,245,0.2); color: var(--accent); border: 1px solid rgba(124,106,245,0.3); }
+.badge-filter { background: rgba(6,182,212,0.2); color: var(--accent3); border: 1px solid rgba(6,182,212,0.3); }
+.badge-env { background: rgba(74,222,128,0.2); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+.badge-mod { background: rgba(244,114,182,0.2); color: var(--accent4); border: 1px solid rgba(244,114,182,0.3); }
+
+.separator {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+/* Keyboard Bar */
+body.light #keyboard-bar {
+  background: rgba(240,239,248,0.97);
+  border-top-color: #ccc8e8;
+}
+
+.kb-white {
+  position: absolute;
+  background: #e8e8f0;
+  border: 1px solid #aaa;
+  border-radius: 0 0 4px 4px;
+  bottom: 0;
+  cursor: pointer;
+  transition: background 0.08s;
+  z-index: 1;
+}
+.kb-white:hover, .kb-white.active { background: #7c6af5 !important; }
+
+.kb-black {
+  position: absolute;
+  background: #111118;
+  border: 1px solid #000;
+  border-radius: 0 0 3px 3px;
+  bottom: 16px;
+  cursor: pointer;
+  transition: background 0.08s;
+  z-index: 2;
+}
+.kb-black:hover, .kb-black.active { background: #a855f7 !important; }
+
+body.light .kb-white { background: #f0eff8; border-color: #9090b0; }
+body.light .kb-black { background: #2a2a3a; }
+
+/* Scrollbar for content with keyboard bar */
+.content { padding-bottom: 20px; }
+
+/* Keyboard shortcut hints */
+.kb-hint {
+  font-size: 7px;
+  font-family: 'Space Mono', monospace;
+  color: rgba(90,90,114,0.8);
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- =============================================
+     HEADER
+     ============================================= -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎛</div>
+    Synth<span>Lab</span>
+  </div>
+  <div class="header-right">
+    <span class="help-badge">10 tipos de síntesis</span>
+    <button class="theme-btn" id="themeBtn" title="Cambiar tema">🌙</button>
+  </div>
+</header>
+
+<!-- =============================================
+     APP CONTAINER
+     ============================================= -->
+<div class="app-container">
+
+  <!-- SIDEBAR NAV -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-section">Síntesis</div>
+
+    <div class="nav-item active" onclick="showPanel('subtractive')">
+      <div class="nav-icon">🌊</div>
+      Sustractiva
+      <span class="nav-number">01</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('additive')">
+      <div class="nav-icon">📊</div>
+      Aditiva
+      <span class="nav-number">02</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('fm')">
+      <div class="nav-icon">〰️</div>
+      FM
+      <span class="nav-number">03</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('la')">
+      <div class="nav-icon">💾</div>
+      LA
+      <span class="nav-number">04</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('wavetable')">
+      <div class="nav-icon">🌀</div>
+      Wavetable
+      <span class="nav-number">05</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('granular')">
+      <div class="nav-icon">⚡</div>
+      Granular
+      <span class="nav-number">06</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('sampler')">
+      <div class="nav-icon">🎹</div>
+      Sampler
+      <span class="nav-number">07</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('vector')">
+      <div class="nav-icon">🔀</div>
+      Vectorial
+      <span class="nav-number">08</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('spectral')">
+      <div class="nav-icon">🌈</div>
+      Espectral
+      <span class="nav-number">09</span>
+    </div>
+    <div class="nav-item" onclick="showPanel('physical')">
+      <div class="nav-icon">🎸</div>
+      Modelado Físico
+      <span class="nav-number">10</span>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- =========================================
+         1. SÍNTESIS SUSTRACTIVA
+         ========================================= -->
+    <div class="synth-panel active" id="panel-subtractive">
+      <div class="panel-header">
+        <div class="panel-title">
+          🌊 Síntesis Sustractiva
+          <span class="panel-tag">CLASSIC</span>
+        </div>
+        <p class="panel-subtitle">
+          El método más clásico: un oscilador genera una onda rica en armónicos,
+          y un filtro "sustrae" (elimina) frecuencias para esculpir el timbre.
+          Es la base de los sintetizadores analógicos clásicos (Moog, Roland Juno, ARP).
+        </p>
+      </div>
+
+      <!-- Transport -->
+      <div class="transport">
+        <button class="play-btn" id="play-subtractive" onclick="toggleSynth('subtractive')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-subtractive">● LISTO</div>
+          <div class="transport-hint">Ajusta los parámetros mientras suena · Usa el teclado para distintas notas (Z/X = octava)</div>
+        </div>
+      </div>
+
+      <!-- Visualizers -->
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-subtractive" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">📊 Espectro FFT</div>
+          <canvas class="fft" id="fft-subtractive" width="400" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Block Diagram -->
+      <div class="block-diagram">
+        <div class="card-title">Diagrama de señal</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 140" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
+                markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--border)"/>
+              </marker>
+              <marker id="arrow-audio" viewBox="0 0 10 10" refX="8" refY="5"
+                markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/>
+              </marker>
+              <marker id="arrow-mod" viewBox="0 0 10 10" refX="8" refY="5"
+                markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--yellow)"/>
+              </marker>
+              <marker id="arrow-cv" viewBox="0 0 10 10" refX="8" refY="5"
+                markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--green)"/>
+              </marker>
+            </defs>
+            <!-- OSC -->
+            <rect class="block-rect block-osc" x="10" y="45" width="100" height="50"/>
+            <text class="block-text" x="60" y="65">OSC</text>
+            <text class="block-text block-sub" x="60" y="80">Saw/Sqr/Tri</text>
+            <!-- FILTER -->
+            <rect class="block-rect block-filter" x="160" y="45" width="100" height="50"/>
+            <text class="block-text" x="210" y="65">FILTRO</text>
+            <text class="block-text block-sub" x="210" y="80">LPF/HPF/BPF</text>
+            <!-- AMP/VCA -->
+            <rect class="block-rect block-env" x="310" y="45" width="100" height="50"/>
+            <text class="block-text" x="360" y="65">VCA</text>
+            <text class="block-text block-sub" x="360" y="80">Amplificador</text>
+            <!-- OUTPUT -->
+            <rect class="block-rect block-out" x="460" y="45" width="80" height="50"/>
+            <text class="block-text" x="500" y="70">OUTPUT</text>
+            <!-- ADSR ENV -->
+            <rect class="block-rect block-env" x="160" y="100" width="100" height="30"/>
+            <text class="block-text" x="210" y="115">ADSR ENV</text>
+            <!-- LFO -->
+            <rect class="block-rect block-lfo" x="10" y="100" width="100" height="30"/>
+            <text class="block-text" x="60" y="115">LFO</text>
+            <!-- Connections -->
+            <line class="conn-line audio" x1="110" y1="70" x2="158" y2="70" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="260" y1="70" x2="308" y2="70" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="410" y1="70" x2="458" y2="70" marker-end="url(#arrow-audio)"/>
+            <!-- ADSR → VCA -->
+            <line class="conn-line cv" x1="260" y1="115" x2="360" y2="96" marker-end="url(#arrow-cv)"/>
+            <!-- LFO → Filter -->
+            <path class="conn-line mod-line" d="M 60,100 Q 60,88 110,88 Q 140,88 158,80" marker-end="url(#arrow-mod)"/>
+            <!-- Labels -->
+            <text fill="var(--accent)" font-size="8" font-family="monospace" x="120" y="65">AUDIO</text>
+            <text fill="var(--green)" font-size="8" font-family="monospace" x="272" y="108">CV</text>
+            <text fill="var(--yellow)" font-size="8" font-family="monospace" x="80" y="85">MOD</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Controls Grid -->
+      <div class="synth-grid">
+        <!-- OSC Controls -->
+        <div class="card">
+          <div class="card-title">Oscilador</div>
+          <div class="wave-selector">
+            <button class="wave-btn active" onclick="setSubWave('sawtooth',this)">Saw</button>
+            <button class="wave-btn" onclick="setSubWave('square',this)">Sqr</button>
+            <button class="wave-btn" onclick="setSubWave('triangle',this)">Tri</button>
+            <button class="wave-btn" onclick="setSubWave('sine',this)">Sin</button>
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia</span>
+              <span class="param-value" id="sub-freq-v">220 Hz</span>
+            </div>
+            <input type="range" id="sub-freq" min="55" max="880" value="220" step="1"
+              oninput="updateSubParam('freq',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Detune</span>
+              <span class="param-value" id="sub-detune-v">0 ct</span>
+            </div>
+            <input type="range" id="sub-detune" min="-50" max="50" value="0" step="1"
+              oninput="updateSubParam('detune',this.value)">
+          </div>
+        </div>
+
+        <!-- FILTER Controls -->
+        <div class="card">
+          <div class="card-title">Filtro VCF</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Tipo de filtro</span>
+            </div>
+            <select id="sub-filtertype" onchange="updateSubParam('filtertype',this.value)">
+              <option value="lowpass">Low-pass (LPF)</option>
+              <option value="highpass">High-pass (HPF)</option>
+              <option value="bandpass">Band-pass (BPF)</option>
+              <option value="notch">Notch</option>
+            </select>
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Cutoff</span>
+              <span class="param-value" id="sub-cutoff-v">1200 Hz</span>
+            </div>
+            <input type="range" id="sub-cutoff" min="80" max="8000" value="1200" step="10"
+              oninput="updateSubParam('cutoff',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Resonancia (Q)</span>
+              <span class="param-value" id="sub-res-v">5.0</span>
+            </div>
+            <input type="range" id="sub-res" min="0.1" max="25" value="5" step="0.1"
+              oninput="updateSubParam('res',this.value)">
+          </div>
+        </div>
+
+        <!-- ADSR -->
+        <div class="card">
+          <div class="card-title">Envolvente ADSR</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Attack</span>
+              <span class="param-value" id="sub-atk-v">0.01 s</span>
+            </div>
+            <input type="range" id="sub-atk" min="0.001" max="2" value="0.01" step="0.001"
+              oninput="updateSubParam('atk',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Decay</span>
+              <span class="param-value" id="sub-dec-v">0.3 s</span>
+            </div>
+            <input type="range" id="sub-dec" min="0.01" max="3" value="0.3" step="0.01"
+              oninput="updateSubParam('dec',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Sustain</span>
+              <span class="param-value" id="sub-sus-v">0.7</span>
+            </div>
+            <input type="range" id="sub-sus" min="0" max="1" value="0.7" step="0.01"
+              oninput="updateSubParam('sus',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Release</span>
+              <span class="param-value" id="sub-rel-v">0.5 s</span>
+            </div>
+            <input type="range" id="sub-rel" min="0.01" max="5" value="0.5" step="0.01"
+              oninput="updateSubParam('rel',this.value)">
+          </div>
+        </div>
+
+        <!-- LFO -->
+        <div class="card">
+          <div class="card-title">LFO (Modulación)</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Velocidad LFO</span>
+              <span class="param-value" id="sub-lfofreq-v">0.5 Hz</span>
+            </div>
+            <input type="range" id="sub-lfofreq" min="0.1" max="20" value="0.5" step="0.1"
+              oninput="updateSubParam('lfofreq',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Profundidad LFO</span>
+              <span class="param-value" id="sub-lfodepth-v">200 Hz</span>
+            </div>
+            <input type="range" id="sub-lfodepth" min="0" max="1000" value="200" step="10"
+              oninput="updateSubParam('lfodepth',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Box -->
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona la síntesis sustractiva?</div>
+        <p>Parte de una señal rica en armónicos (onda de sierra, cuadrada) y aplica un filtro
+          para eliminar frecuencias. El filtro VCF controlado por la envolvente ADSR permite que
+          el timbre evolucione en el tiempo, creando el característico "barrido" de los sintetizadores analógicos.</p>
+        <ul>
+          <li><strong>OSC:</strong> Genera la forma de onda fuente (sierra = máximos armónicos)</li>
+          <li><strong>VCF (Filtro):</strong> Elimina frecuencias por encima del Cutoff. La resonancia crea un pico</li>
+          <li><strong>ADSR:</strong> Controla cómo evoluciona la amplitud/filtro en el tiempo</li>
+          <li><strong>LFO:</strong> Modulación periódica del Cutoff = efecto "wah" automático</li>
+        </ul>
+      </div>
+    </div><!-- /subtractive -->
+
+    <!-- =========================================
+         2. SÍNTESIS ADITIVA
+         ========================================= -->
+    <div class="synth-panel" id="panel-additive">
+      <div class="panel-header">
+        <div class="panel-title">
+          📊 Síntesis Aditiva
+          <span class="panel-tag">FOURIER</span>
+        </div>
+        <p class="panel-subtitle">
+          Construye el sonido sumando múltiples osciladores sinusoidales (harmónicos).
+          Cualquier sonido puede descomponerse en suma de senos (Teorema de Fourier).
+          Ejemplo histórico: órganos Hammond, Synclavier.
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-additive" onclick="toggleSynth('additive')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-additive">● LISTO</div>
+          <div class="transport-hint">Arrastra las barras de armónicos para cambiar el timbre</div>
+        </div>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-additive" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">📊 Espectro FFT</div>
+          <canvas class="fft" id="fft-additive" width="400" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Diagram -->
+      <div class="block-diagram">
+        <div class="card-title">Diagrama de señal</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 160" xmlns="http://www.w3.org/2000/svg">
+            <!-- Multiple OSCs -->
+            <rect class="block-rect block-osc" x="10" y="10" width="80" height="30"/>
+            <text class="block-text" x="50" y="25">SIN 1 (f)</text>
+            <rect class="block-rect block-osc" x="10" y="50" width="80" height="30"/>
+            <text class="block-text" x="50" y="65">SIN 2 (2f)</text>
+            <rect class="block-rect block-osc" x="10" y="90" width="80" height="30"/>
+            <text class="block-text" x="50" y="105">SIN 3 (3f)</text>
+            <rect class="block-rect block-osc" x="10" y="130" width="80" height="30"/>
+            <text class="block-text" x="50" y="145">SIN N (Nf)</text>
+            <!-- Dots -->
+            <text fill="var(--text3)" x="48" y="122" font-size="14">…</text>
+            <!-- MIXER -->
+            <rect class="block-rect block-mix" x="180" y="60" width="80" height="40"/>
+            <text class="block-text" x="220" y="80">MIXER</text>
+            <!-- ADSR -->
+            <rect class="block-rect block-env" x="330" y="60" width="80" height="40"/>
+            <text class="block-text" x="370" y="80">ADSR</text>
+            <!-- OUT -->
+            <rect class="block-rect block-out" x="490" y="60" width="80" height="40"/>
+            <text class="block-text" x="530" y="80">OUTPUT</text>
+            <!-- Lines to mixer -->
+            <line class="conn-line audio" x1="90" y1="25" x2="178" y2="72" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="90" y1="65" x2="178" y2="78" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="90" y1="105" x2="178" y2="84" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="90" y1="145" x2="178" y2="88" marker-end="url(#arrow-audio)"/>
+            <!-- Mixer → ADSR → OUT -->
+            <line class="conn-line audio" x1="260" y1="80" x2="328" y2="80" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="410" y1="80" x2="488" y2="80" marker-end="url(#arrow-audio)"/>
+            <!-- Amplitude labels -->
+            <text fill="var(--accent)" font-size="8" font-family="monospace" x="92" y="22">A1</text>
+            <text fill="var(--accent)" font-size="8" font-family="monospace" x="92" y="62">A2</text>
+            <text fill="var(--accent)" font-size="8" font-family="monospace" x="92" y="102">A3</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <!-- Harmonics -->
+        <div class="card full-width">
+          <div class="card-title">Amplitudes de Armónicos (clic y arrastra ↕)</div>
+          <div class="harmonics-grid" id="harmonics-grid">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Oscilador Base</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia fundamental</span>
+              <span class="param-value" id="add-freq-v">220 Hz</span>
+            </div>
+            <input type="range" id="add-freq" min="55" max="660" value="220" step="1"
+              oninput="updateAddParam('freq',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Vibrato (LFO)</span>
+              <span class="param-value" id="add-vib-v">0.0 Hz</span>
+            </div>
+            <input type="range" id="add-vib" min="0" max="8" value="0" step="0.1"
+              oninput="updateAddParam('vib',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Presets de Timbre</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:10px">
+            Presets clásicos basados en análisis de Fourier de instrumentos reales
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <button class="wave-btn" onclick="setAddPreset('sine')">Sine pura</button>
+            <button class="wave-btn" onclick="setAddPreset('organ')">Órgano</button>
+            <button class="wave-btn" onclick="setAddPreset('brass')">Brass</button>
+            <button class="wave-btn" onclick="setAddPreset('clarinet')">Clarinete</button>
+            <button class="wave-btn" onclick="setAddPreset('bell')">Campana</button>
+            <button class="wave-btn" onclick="setAddPreset('saw')">Diente Sierra</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona la síntesis aditiva?</div>
+        <p>El Teorema de Fourier establece que cualquier sonido periódico es la suma de sinusoides.
+          La síntesis aditiva replica esto directamente: suma N osciladores sinusoidales con diferentes
+          frecuencias (múltiplos del fundamental) y amplitudes para construir el timbre deseado.</p>
+        <ul>
+          <li><strong>Fundamental (1f):</strong> La frecuencia base que determina el tono percibido</li>
+          <li><strong>2f, 3f, 4f…:</strong> Armónicos que dan "color" y carácter al sonido</li>
+          <li><strong>Mixer:</strong> Suma todas las sinusoides ponderadas por su amplitud</li>
+          <li><strong>Complejidad:</strong> Requiere muchos osciladores; históricamente costoso de implementar</li>
+        </ul>
+      </div>
+    </div><!-- /additive -->
+
+    <!-- =========================================
+         3. SÍNTESIS FM
+         ========================================= -->
+    <div class="synth-panel" id="panel-fm">
+      <div class="panel-header">
+        <div class="panel-title">
+          〰️ Síntesis FM
+          <span class="panel-tag">YAMAHA DX7</span>
+        </div>
+        <p class="panel-subtitle">
+          Frequency Modulation: un oscilador (modulador) altera la frecuencia de otro (portadora).
+          Genera espectros complejos con pocos osciladores. Base del icónico Yamaha DX7 (1983).
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-fm" onclick="toggleSynth('fm')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-fm">● LISTO</div>
+          <div class="transport-hint">El índice de modulación crea el carácter FM característico</div>
+        </div>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-fm" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">📊 Espectro FFT</div>
+          <canvas class="fft" id="fft-fm" width="400" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Diagram -->
+      <div class="block-diagram">
+        <div class="card-title">Diagrama de señal — Operadores FM</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 140" xmlns="http://www.w3.org/2000/svg">
+            <!-- MOD OSC -->
+            <rect class="block-rect block-mod" x="10" y="50" width="110" height="45"/>
+            <text class="block-text" x="65" y="68">MODULADOR</text>
+            <text class="block-text block-sub" x="65" y="82">Oscilador M</text>
+            <!-- MOD ENV -->
+            <rect class="block-rect block-env" x="10" y="105" width="110" height="28"/>
+            <text class="block-text" x="65" y="119">ENV Mod</text>
+            <!-- FM INDEX -->
+            <rect class="block-rect block-mix" x="190" y="50" width="90" height="45"/>
+            <text class="block-text" x="235" y="68">ÍNDICE</text>
+            <text class="block-text block-sub" x="235" y="82">× Amplitud</text>
+            <!-- CARRIER -->
+            <rect class="block-rect block-osc" x="370" y="50" width="110" height="45"/>
+            <text class="block-text" x="425" y="68">PORTADORA</text>
+            <text class="block-text block-sub" x="425" y="82">Oscilador C</text>
+            <!-- CAR ENV -->
+            <rect class="block-rect block-env" x="370" y="105" width="110" height="28"/>
+            <text class="block-text" x="425" y="119">ENV Car</text>
+            <!-- OUT -->
+            <rect class="block-rect block-out" x="560" y="58" width="80" height="30"/>
+            <text class="block-text" x="600" y="73">OUTPUT</text>
+            <!-- Lines -->
+            <line class="conn-line mod-line" x1="120" y1="72" x2="188" y2="72" marker-end="url(#arrow-mod)"/>
+            <line class="conn-line mod-line" x1="280" y1="72" x2="368" y2="72" marker-end="url(#arrow-mod)"/>
+            <line class="conn-line audio" x1="480" y1="72" x2="558" y2="73" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line cv" x1="65" y1="105" x2="65" y2="96" marker-end="url(#arrow-cv)"/>
+            <line class="conn-line cv" x1="425" y1="105" x2="425" y2="96" marker-end="url(#arrow-cv)"/>
+            <!-- Labels -->
+            <text fill="var(--yellow)" font-size="8" font-family="monospace" x="125" y="67">FM MOD</text>
+            <text fill="var(--yellow)" font-size="8" font-family="monospace" x="283" y="67">mod(t)×I</text>
+            <text fill="var(--accent)" font-size="8" font-family="monospace" x="483" y="68">AUDIO</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <div class="card">
+          <div class="card-title">Portadora (Carrier)</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia portadora</span>
+              <span class="param-value" id="fm-freq-v">220 Hz</span>
+            </div>
+            <input type="range" id="fm-freq" min="55" max="880" value="220" step="1"
+              oninput="updateFMParam('freq',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Modulador</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Ratio M:C</span>
+              <span class="param-value" id="fm-ratio-v">2.0</span>
+            </div>
+            <input type="range" id="fm-ratio" min="0.25" max="10" value="2" step="0.25"
+              oninput="updateFMParam('ratio',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Índice FM (β)</span>
+              <span class="param-value" id="fm-index-v">50</span>
+            </div>
+            <input type="range" id="fm-index" min="0" max="500" value="50" step="5"
+              oninput="updateFMParam('index',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Envolvente Carrier</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Attack</span>
+              <span class="param-value" id="fm-atk-v">0.01 s</span>
+            </div>
+            <input type="range" id="fm-atk" min="0.001" max="2" value="0.01" step="0.001"
+              oninput="updateFMParam('atk',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Decay</span>
+              <span class="param-value" id="fm-dec-v">0.5 s</span>
+            </div>
+            <input type="range" id="fm-dec" min="0.01" max="4" value="0.5" step="0.01"
+              oninput="updateFMParam('dec',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Presets FM</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <button class="wave-btn" onclick="setFMPreset('epiano')">E.Piano</button>
+            <button class="wave-btn" onclick="setFMPreset('bass')">Bass</button>
+            <button class="wave-btn" onclick="setFMPreset('bell')">Bell</button>
+            <button class="wave-btn" onclick="setFMPreset('brass')">Brass FM</button>
+            <button class="wave-btn" onclick="setFMPreset('woodwind')">Viento</button>
+            <button class="wave-btn" onclick="setFMPreset('percussion')">Perc</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona la síntesis FM?</div>
+        <p>En FM, un oscilador "Modulador" no produce sonido directamente, sino que modifica la
+          frecuencia del oscilador "Portadora". La cantidad de modulación (Índice β) determina
+          cuántos armónicos aparecen. A mayor índice = timbre más complejo y brillante.</p>
+        <ul>
+          <li><strong>Portadora (C):</strong> Oscilador cuya frecuencia es modulada — determina el tono</li>
+          <li><strong>Modulador (M):</strong> Modula la frecuencia de C: C(t) = sin(2πfc·t + β·sin(2πfm·t))</li>
+          <li><strong>Ratio C:M:</strong> Relación armónica. Ratios enteros = timbres armónicos; decimales = inarmónicos (campanas, gongs)</li>
+          <li><strong>Índice β:</strong> A mayor β, más bandas laterales = sonido más brillante y "metálico"</li>
+        </ul>
+      </div>
+    </div><!-- /fm -->
+
+    <!-- =========================================
+         4. SÍNTESIS LA
+         ========================================= -->
+    <div class="synth-panel" id="panel-la">
+      <div class="panel-header">
+        <div class="panel-title">
+          💾 Síntesis LA
+          <span class="panel-tag">ROLAND D-50</span>
+        </div>
+        <p class="panel-subtitle">
+          Linear Arithmetic: combina samples digitales cortos (transitorios) con síntesis digital.
+          El ataque usa una muestra real, el sustain usa síntesis. Característico del Roland D-50 (1987).
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-la" onclick="toggleSynth('la')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-la">● LISTO</div>
+          <div class="transport-hint">Mezcla entre el transitorio PCM y la síntesis digital</div>
+        </div>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-la" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">📊 Espectro FFT</div>
+          <canvas class="fft" id="fft-la" width="400" height="100"></canvas>
+        </div>
+      </div>
+
+      <div class="block-diagram">
+        <div class="card-title">Diagrama de señal LA</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 140" xmlns="http://www.w3.org/2000/svg">
+            <!-- PCM sample -->
+            <rect class="block-rect block-sample" x="10" y="20" width="110" height="40"/>
+            <text class="block-text" x="65" y="35">PCM SAMPLE</text>
+            <text class="block-text block-sub" x="65" y="50">Transitorio</text>
+            <!-- Digital synth -->
+            <rect class="block-rect block-osc" x="10" y="80" width="110" height="40"/>
+            <text class="block-text" x="65" y="95">SÍNTESIS DIGITAL</text>
+            <text class="block-text block-sub" x="65" y="110">Sustain/Loop</text>
+            <!-- ENV for PCM -->
+            <rect class="block-rect block-env" x="180" y="20" width="90" height="30"/>
+            <text class="block-text" x="225" y="35">ENV PCM</text>
+            <!-- ENV for synth -->
+            <rect class="block-rect block-env" x="180" y="80" width="90" height="30"/>
+            <text class="block-text" x="225" y="95">ENV SYN</text>
+            <!-- LA MIXER -->
+            <rect class="block-rect block-mix" x="340" y="50" width="90" height="40"/>
+            <text class="block-text" x="385" y="65">LA MIXER</text>
+            <text class="block-text block-sub" x="385" y="78">Crossfade</text>
+            <!-- EFX -->
+            <rect class="block-rect block-mod" x="490" y="50" width="80" height="40"/>
+            <text class="block-text" x="530" y="65">EFX</text>
+            <text class="block-text block-sub" x="530" y="78">Chorus/Rev</text>
+            <!-- OUT -->
+            <rect class="block-rect block-out" x="620" y="58" width="55" height="28"/>
+            <text class="block-text" x="647" y="72">OUT</text>
+            <!-- Lines -->
+            <line class="conn-line audio" x1="120" y1="40" x2="178" y2="35" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="120" y1="100" x2="178" y2="95" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="270" y1="35" x2="338" y2="62" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="270" y1="95" x2="338" y2="78" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="430" y1="70" x2="488" y2="70" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="570" y1="70" x2="618" y2="72" marker-end="url(#arrow-audio)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <div class="card">
+          <div class="card-title">Parte PCM (Sample)</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Tipo de transitorio</span>
+            </div>
+            <select id="la-sample" onchange="updateLAParam('sample',this.value)">
+              <option value="piano">Piano Attack</option>
+              <option value="brass">Brass Attack</option>
+              <option value="strings">Strings Attack</option>
+              <option value="click">Percusivo (Click)</option>
+            </select>
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Duración transitorio</span>
+              <span class="param-value" id="la-transdur-v">0.15 s</span>
+            </div>
+            <input type="range" id="la-transdur" min="0.01" max="0.5" value="0.15" step="0.01"
+              oninput="updateLAParam('transdur',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Parte Síntesis Digital</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Forma de onda digital</span>
+            </div>
+            <select id="la-synwave" onchange="updateLAParam('synwave',this.value)">
+              <option value="sine">Sine</option>
+              <option value="triangle">Triangle</option>
+              <option value="sawtooth">Sawtooth</option>
+            </select>
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia</span>
+              <span class="param-value" id="la-freq-v">220 Hz</span>
+            </div>
+            <input type="range" id="la-freq" min="55" max="880" value="220" step="1"
+              oninput="updateLAParam('freq',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Mezcla LA (Crossfade)</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">PCM ← Mix → Síntesis</span>
+              <span class="param-value" id="la-mix-v">50%</span>
+            </div>
+            <input type="range" id="la-mix" min="0" max="100" value="50" step="1"
+              oninput="updateLAParam('mix',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Chorus profundidad</span>
+              <span class="param-value" id="la-chorus-v">0.3</span>
+            </div>
+            <input type="range" id="la-chorus" min="0" max="1" value="0.3" step="0.01"
+              oninput="updateLAParam('chorus',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">ADSR Síntesis</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Attack</span>
+              <span class="param-value" id="la-atk-v">0.01 s</span>
+            </div>
+            <input type="range" id="la-atk" min="0.001" max="2" value="0.01" step="0.001"
+              oninput="updateLAParam('atk',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Release</span>
+              <span class="param-value" id="la-rel-v">1.0 s</span>
+            </div>
+            <input type="range" id="la-rel" min="0.01" max="5" value="1.0" step="0.01"
+              oninput="updateLAParam('rel',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona la síntesis LA?</div>
+        <p>El truco de la síntesis LA es que los oídos humanos son muy sensibles al transitorio de ataque.
+          Combinando un breve sample real (PCM) para el ataque con síntesis digital para el sustain,
+          se obtiene el realismo de las muestras con la flexibilidad y duración infinita de la síntesis.</p>
+        <ul>
+          <li><strong>PCM Attack:</strong> Muestra real corta que captura el transitorio (el "ataque" del instrumento)</li>
+          <li><strong>Síntesis Digital:</strong> Oscilador que continúa después del transitorio</li>
+          <li><strong>Crossfade:</strong> Mezcla la proporción PCM/síntesis para crear el carácter</li>
+          <li><strong>Chorus integrado:</strong> El D-50 tenía efectos incorporados que son parte del sonido</li>
+        </ul>
+      </div>
+    </div><!-- /la -->
+
+    <!-- =========================================
+         5. WAVETABLE
+         ========================================= -->
+    <div class="synth-panel" id="panel-wavetable">
+      <div class="panel-header">
+        <div class="panel-title">
+          🌀 Síntesis Wavetable
+          <span class="panel-tag">PPG WAVE</span>
+        </div>
+        <p class="panel-subtitle">
+          Almacena ciclos de onda en una tabla y los recorre/interpola. Permite "morphing" de timbre
+          en tiempo real. Base de sintetizadores modernos como el Waldorf, PPG Wave, Serum.
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-wavetable" onclick="toggleSynth('wavetable')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-wavetable">● LISTO</div>
+          <div class="transport-hint">La posición en la tabla cambia el timbre mientras suena</div>
+        </div>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-wavetable" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">🌊 Tabla de ondas</div>
+          <canvas id="wavetable-viz" width="400" height="100"
+            style="width:100%;height:100px;display:block;background:var(--bg);border-radius:6px;"></canvas>
+        </div>
+      </div>
+
+      <div class="block-diagram">
+        <div class="card-title">Diagrama Wavetable</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 130" xmlns="http://www.w3.org/2000/svg">
+            <!-- WAVETABLE MEMORY -->
+            <rect class="block-rect block-wave" x="10" y="30" width="120" height="50"/>
+            <text class="block-text" x="70" y="50">WAVETABLE</text>
+            <text class="block-text block-sub" x="70" y="65">N ciclos almacenados</text>
+            <!-- POSITION CTRL -->
+            <rect class="block-rect block-lfo" x="10" y="90" width="120" height="28"/>
+            <text class="block-text" x="70" y="104">POS CTRL / LFO</text>
+            <!-- READER -->
+            <rect class="block-rect block-osc" x="200" y="40" width="100" height="40"/>
+            <text class="block-text" x="250" y="55">LECTOR</text>
+            <text class="block-text block-sub" x="250" y="68">Interpolación</text>
+            <!-- FILTER -->
+            <rect class="block-rect block-filter" x="370" y="40" width="90" height="40"/>
+            <text class="block-text" x="415" y="55">FILTRO</text>
+            <text class="block-text block-sub" x="415" y="68">VCF</text>
+            <!-- ADSR -->
+            <rect class="block-rect block-env" x="370" y="90" width="90" height="28"/>
+            <text class="block-text" x="415" y="104">ADSR</text>
+            <!-- OUT -->
+            <rect class="block-rect block-out" x="530" y="48" width="80" height="28"/>
+            <text class="block-text" x="570" y="62">OUTPUT</text>
+            <!-- Lines -->
+            <line class="conn-line audio" x1="130" y1="55" x2="198" y2="60" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line mod-line" x1="70" y1="90" x2="200" y2="72" marker-end="url(#arrow-mod)"/>
+            <line class="conn-line audio" x1="300" y1="60" x2="368" y2="60" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="460" y1="60" x2="528" y2="62" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line cv" x1="415" y1="90" x2="415" y2="82" marker-end="url(#arrow-cv)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <div class="card">
+          <div class="card-title">Wavetable</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia</span>
+              <span class="param-value" id="wt-freq-v">220 Hz</span>
+            </div>
+            <input type="range" id="wt-freq" min="55" max="880" value="220" step="1"
+              oninput="updateWTParam('freq',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Posición en tabla</span>
+              <span class="param-value" id="wt-pos-v">0.0</span>
+            </div>
+            <input type="range" id="wt-pos" min="0" max="1" value="0" step="0.01"
+              oninput="updateWTParam('pos',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Tabla de ondas</span>
+            </div>
+            <select id="wt-table" onchange="updateWTParam('table',this.value)">
+              <option value="basic">Básica (sine→saw)</option>
+              <option value="formant">Formantes vocales</option>
+              <option value="bright">Brillante</option>
+              <option value="hollow">Hollow</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Morphing (LFO → Posición)</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Velocidad morph</span>
+              <span class="param-value" id="wt-morphspd-v">0.0 Hz</span>
+            </div>
+            <input type="range" id="wt-morphspd" min="0" max="5" value="0" step="0.05"
+              oninput="updateWTParam('morphspd',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Cutoff filtro</span>
+              <span class="param-value" id="wt-cutoff-v">3000 Hz</span>
+            </div>
+            <input type="range" id="wt-cutoff" min="200" max="8000" value="3000" step="50"
+              oninput="updateWTParam('cutoff',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona la síntesis Wavetable?</div>
+        <p>Una Wavetable es una colección de ciclos de onda almacenados en memoria. El oscilador
+          lee estos ciclos a la frecuencia deseada. Lo diferencial es que puede desplazarse entre
+          ciclos (morphing), creando transiciones de timbre suaves y complejas.</p>
+        <ul>
+          <li><strong>Tabla:</strong> Array de N ciclos de onda, cada uno con su perfil armónico único</li>
+          <li><strong>Posición:</strong> Index 0–1 que selecciona (interpola) qué ciclo leer</li>
+          <li><strong>Morphing:</strong> Un LFO puede barrer la posición → el timbre evoluciona cíclicamente</li>
+          <li><strong>Interpolación:</strong> Entre posiciones contiguas se hace crossfade para suavizar</li>
+        </ul>
+      </div>
+    </div><!-- /wavetable -->
+
+    <!-- =========================================
+         6. SÍNTESIS GRANULAR
+         ========================================= -->
+    <div class="synth-panel" id="panel-granular">
+      <div class="panel-header">
+        <div class="panel-title">
+          ⚡ Síntesis Granular
+          <span class="panel-tag">CURTIS ROADS</span>
+        </div>
+        <p class="panel-subtitle">
+          Divide el sonido en pequeños "granos" (1–200ms) y los reorganiza, superpone y dispersa.
+          Permite time-stretching, pitch-shifting y texturas imposibles con otros métodos.
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-granular" onclick="toggleSynth('granular')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-granular">● LISTO</div>
+          <div class="transport-hint">La densidad y tamaño del grano determinan la textura</div>
+        </div>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-granular" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">🌊 Visualizador de granos</div>
+          <canvas id="grain-viz" width="400" height="100"
+            style="width:100%;height:100px;display:block;background:var(--bg);border-radius:6px;"></canvas>
+        </div>
+      </div>
+
+      <div class="block-diagram">
+        <div class="card-title">Diagrama Granular</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 140" xmlns="http://www.w3.org/2000/svg">
+            <!-- SOURCE -->
+            <rect class="block-rect block-sample" x="10" y="50" width="100" height="40"/>
+            <text class="block-text" x="60" y="65">FUENTE</text>
+            <text class="block-text block-sub" x="60" y="78">Sample/OSC</text>
+            <!-- GRAIN ENGINE -->
+            <rect class="block-rect block-grain" x="180" y="30" width="130" height="80"/>
+            <text class="block-text" x="245" y="55">MOTOR GRANULAR</text>
+            <text class="block-text block-sub" x="245" y="70">Posición + Ventana</text>
+            <text class="block-text block-sub" x="245" y="83">Densidad + Tamaño</text>
+            <text class="block-text block-sub" x="245" y="96">Pitch + Dispersión</text>
+            <!-- MIX -->
+            <rect class="block-rect block-mix" x="390" y="50" width="90" height="40"/>
+            <text class="block-text" x="435" y="65">CLOUD</text>
+            <text class="block-text block-sub" x="435" y="78">Mezclador</text>
+            <!-- OUT -->
+            <rect class="block-rect block-out" x="560" y="58" width="80" height="28"/>
+            <text class="block-text" x="600" y="72">OUTPUT</text>
+            <!-- Lines -->
+            <line class="conn-line audio" x1="110" y1="70" x2="178" y2="70" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="310" y1="70" x2="388" y2="70" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="480" y1="70" x2="558" y2="72" marker-end="url(#arrow-audio)"/>
+            <!-- Grain particles visual -->
+            <circle cx="350" cy="55" r="3" fill="var(--accent2)" opacity="0.7"/>
+            <circle cx="360" cy="75" r="2" fill="var(--accent2)" opacity="0.5"/>
+            <circle cx="340" cy="85" r="3" fill="var(--accent2)" opacity="0.6"/>
+            <circle cx="370" cy="60" r="2" fill="var(--accent)" opacity="0.8"/>
+            <circle cx="355" cy="90" r="2" fill="var(--accent)" opacity="0.4"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <div class="card">
+          <div class="card-title">Motor de Granos</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Tamaño de grano</span>
+              <span class="param-value" id="gr-size-v">80 ms</span>
+            </div>
+            <input type="range" id="gr-size" min="5" max="300" value="80" step="5"
+              oninput="updateGRParam('size',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Densidad</span>
+              <span class="param-value" id="gr-density-v">8 gr/s</span>
+            </div>
+            <input type="range" id="gr-density" min="1" max="30" value="8" step="1"
+              oninput="updateGRParam('density',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia base</span>
+              <span class="param-value" id="gr-freq-v">220 Hz</span>
+            </div>
+            <input type="range" id="gr-freq" min="55" max="880" value="220" step="1"
+              oninput="updateGRParam('freq',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Aleatoriedad</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Dispersión de pitch</span>
+              <span class="param-value" id="gr-pitch-v">0 ct</span>
+            </div>
+            <input type="range" id="gr-pitch" min="0" max="100" value="0" step="1"
+              oninput="updateGRParam('pitchrand',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Forma ventana grano</span>
+            </div>
+            <select id="gr-window" onchange="updateGRParam('window',this.value)">
+              <option value="hann">Hann (suave)</option>
+              <option value="gaussian">Gaussiana</option>
+              <option value="rectangular">Rectangular (hard)</option>
+            </select>
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Reverb (espacio)</span>
+              <span class="param-value" id="gr-reverb-v">0.2</span>
+            </div>
+            <input type="range" id="gr-reverb" min="0" max="1" value="0.2" step="0.01"
+              oninput="updateGRParam('reverb',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona la síntesis granular?</div>
+        <p>La granular trata el sonido como una "nube" de micro-eventos (granos). Cada grano es
+          un pequeño fragmento de onda (5–300ms) con su propia envolvente. Superponiendo muchos
+          granos con variaciones de pitch, tiempo y posición se crean texturas únicas.</p>
+        <ul>
+          <li><strong>Grano:</strong> Fragmento de audio con envolvente de ventana (para evitar clicks)</li>
+          <li><strong>Densidad:</strong> Granos por segundo — alta densidad = textura continua</li>
+          <li><strong>Dispersión:</strong> Aleatoriedad en pitch/posición → efecto "nube" difuso</li>
+          <li><strong>Time-stretch:</strong> Aumentar densidad sin cambiar pitch = reproducción lenta</li>
+        </ul>
+      </div>
+    </div><!-- /granular -->
+
+    <!-- =========================================
+         7. SAMPLER / ROMPLER
+         ========================================= -->
+    <div class="synth-panel" id="panel-sampler">
+      <div class="panel-header">
+        <div class="panel-title">
+          🎹 Sampler / Rompler
+          <span class="panel-tag">PCM PLAYBACK</span>
+        </div>
+        <p class="panel-subtitle">
+          Graba o carga muestras de audio reales y las reproduce a diferentes tonos.
+          El Rompler usa muestras de ROM (solo lectura). Base de los bancos de sonido GM/GS.
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-sampler" onclick="toggleSynth('sampler')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-sampler">● LISTO</div>
+          <div class="transport-hint">Genera samples sintéticos de diferentes instrumentos</div>
+        </div>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-sampler" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">📊 Espectro FFT</div>
+          <canvas class="fft" id="fft-sampler" width="400" height="100"></canvas>
+        </div>
+      </div>
+
+      <div class="block-diagram">
+        <div class="card-title">Diagrama Sampler</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 130" xmlns="http://www.w3.org/2000/svg">
+            <!-- ROM/RAM -->
+            <rect class="block-rect block-sample" x="10" y="40" width="110" height="50"/>
+            <text class="block-text" x="65" y="58">ROM / RAM</text>
+            <text class="block-text block-sub" x="65" y="73">Multi-muestras</text>
+            <!-- PITCH ENGINE -->
+            <rect class="block-rect block-osc" x="190" y="40" width="110" height="50"/>
+            <text class="block-text" x="245" y="58">PITCH ENGINE</text>
+            <text class="block-text block-sub" x="245" y="73">Rate × 2^(cents/1200)</text>
+            <!-- LOOP -->
+            <rect class="block-rect block-wave" x="370" y="40" width="90" height="50"/>
+            <text class="block-text" x="415" y="58">LOOP</text>
+            <text class="block-text block-sub" x="415" y="68">Start/End</text>
+            <text class="block-text block-sub" x="415" y="78">Sustain</text>
+            <!-- ENV -->
+            <rect class="block-rect block-env" x="370" y="100" width="90" height="25"/>
+            <text class="block-text" x="415" y="112">ADSR</text>
+            <!-- OUT -->
+            <rect class="block-rect block-out" x="540" y="48" width="80" height="35"/>
+            <text class="block-text" x="580" y="65">OUTPUT</text>
+            <!-- Lines -->
+            <line class="conn-line audio" x1="120" y1="65" x2="188" y2="65" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="300" y1="65" x2="368" y2="65" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="460" y1="65" x2="538" y2="65" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line cv" x1="415" y1="100" x2="415" y2="92" marker-end="url(#arrow-cv)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <div class="card">
+          <div class="card-title">Selección de muestra</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Instrumento (simulado)</span>
+            </div>
+            <select id="samp-inst" onchange="updateSampParam('inst',this.value)">
+              <option value="piano">Piano de cola</option>
+              <option value="strings">Cuerdas orquestales</option>
+              <option value="choir">Coro</option>
+              <option value="marimba">Marimba</option>
+              <option value="pad">Synth Pad</option>
+            </select>
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Nota (MIDI)</span>
+              <span class="param-value" id="samp-note-v">A3 (220Hz)</span>
+            </div>
+            <input type="range" id="samp-note" min="36" max="84" value="57" step="1"
+              oninput="updateSampParam('note',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Playback & Loop</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Loop</span>
+            </div>
+            <select id="samp-loop" onchange="updateSampParam('loop',this.value)">
+              <option value="none">Sin loop</option>
+              <option value="sustain" selected>Loop sustain</option>
+              <option value="pingpong">Ping-pong</option>
+            </select>
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Velocidad (Velocity)</span>
+              <span class="param-value" id="samp-vel-v">100</span>
+            </div>
+            <input type="range" id="samp-vel" min="10" max="127" value="100" step="1"
+              oninput="updateSampParam('vel',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">ADSR & Pitch</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Attack</span>
+              <span class="param-value" id="samp-atk-v">0.005 s</span>
+            </div>
+            <input type="range" id="samp-atk" min="0.001" max="2" value="0.005" step="0.001"
+              oninput="updateSampParam('atk',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Release</span>
+              <span class="param-value" id="samp-rel-v">0.8 s</span>
+            </div>
+            <input type="range" id="samp-rel" min="0.01" max="8" value="0.8" step="0.01"
+              oninput="updateSampParam('rel',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Procesado</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Tune fino (cents)</span>
+              <span class="param-value" id="samp-tune-v">0 ct</span>
+            </div>
+            <input type="range" id="samp-tune" min="-100" max="100" value="0" step="1"
+              oninput="updateSampParam('tune',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">EQ brillance</span>
+              <span class="param-value" id="samp-bright-v">0 dB</span>
+            </div>
+            <input type="range" id="samp-bright" min="-12" max="12" value="0" step="0.5"
+              oninput="updateSampParam('bright',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona el Sampler/Rompler?</div>
+        <p>El sampler graba audio real y lo reproduce transpuesto por velocidad de reproducción.
+          El Rompler (ROM + Sampler) trae las muestras en ROM (no se pueden grabar). Para transponer
+          una octava, se duplica la velocidad de reproducción (relación logarítmica en base 2).</p>
+        <ul>
+          <li><strong>Multisampling:</strong> Varias muestras por instrumento para diferente rango/velocidad</li>
+          <li><strong>Pitch shift:</strong> rate = originalRate × 2^(semitonos/12)</li>
+          <li><strong>Loop:</strong> Para instrumentos con sustain largo, se hace loop de un fragmento</li>
+          <li><strong>Velocity layers:</strong> Muestras diferentes según la intensidad (piano p/mf/ff)</li>
+        </ul>
+      </div>
+    </div><!-- /sampler -->
+
+    <!-- =========================================
+         8. SÍNTESIS VECTORIAL
+         ========================================= -->
+    <div class="synth-panel" id="panel-vector">
+      <div class="panel-header">
+        <div class="panel-title">
+          🔀 Síntesis Vectorial
+          <span class="panel-tag">PROPHET VS</span>
+        </div>
+        <p class="panel-subtitle">
+          Mezcla cuatro fuentes de sonido mediante un joystick XY. La posición determina la
+          proporción de cada fuente. Permite morphing 2D complejo entre timbres.
+          Introducida por el Sequential Prophet VS (1986).
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-vector" onclick="toggleSynth('vector')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-vector">● LISTO</div>
+          <div class="transport-hint">Mueve el punto en el pad XY para mezclar las 4 fuentes</div>
+        </div>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-vector" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">📊 Espectro FFT</div>
+          <canvas class="fft" id="fft-vector" width="400" height="100"></canvas>
+        </div>
+      </div>
+
+      <div class="block-diagram">
+        <div class="card-title">Diagrama Vectorial</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 140" xmlns="http://www.w3.org/2000/svg">
+            <!-- 4 OSC -->
+            <rect class="block-rect block-osc" x="10" y="10" width="90" height="30"/>
+            <text class="block-text" x="55" y="25">OSC A (NW)</text>
+            <rect class="block-rect block-mod" x="10" y="50" width="90" height="30"/>
+            <text class="block-text" x="55" y="65">OSC B (NE)</text>
+            <rect class="block-rect block-env" x="10" y="90" width="90" height="30"/>
+            <text class="block-text" x="55" y="105">OSC C (SW)</text>
+            <rect class="block-rect block-filter" x="10" y="130" width="90" height="30"/>
+            <text class="block-text" x="55" y="145">OSC D (SE)</text>
+            <!-- VECTOR MIX -->
+            <rect class="block-rect block-mix" x="210" y="55" width="110" height="60"/>
+            <text class="block-text" x="265" y="75">VECTOR MIX</text>
+            <text class="block-text block-sub" x="265" y="88">XY Joystick</text>
+            <text class="block-text block-sub" x="265" y="100">Bilinear Interp</text>
+            <!-- XY CTRL -->
+            <rect class="block-rect block-lfo" x="130" y="10" width="70" height="30"/>
+            <text class="block-text" x="165" y="25">XY LFO</text>
+            <!-- VCF -->
+            <rect class="block-rect block-filter" x="400" y="65" width="90" height="30"/>
+            <text class="block-text" x="445" y="80">VCF</text>
+            <!-- OUT -->
+            <rect class="block-rect block-out" x="570" y="68" width="80" height="28"/>
+            <text class="block-text" x="610" y="82">OUTPUT</text>
+            <!-- Lines -->
+            <line class="conn-line audio" x1="100" y1="25" x2="208" y2="68" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="100" y1="65" x2="208" y2="78" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="100" y1="105" x2="208" y2="92" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="100" y1="145" x2="208" y2="102" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line mod-line" x1="165" y1="40" x2="220" y2="55" marker-end="url(#arrow-mod)"/>
+            <line class="conn-line audio" x1="320" y1="85" x2="398" y2="80" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="490" y1="80" x2="568" y2="82" marker-end="url(#arrow-audio)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <!-- XY PAD -->
+        <div class="card">
+          <div class="card-title">Vector Pad (XY)</div>
+          <canvas id="vector-pad" width="200" height="200"
+            style="width:200px;height:200px;border:1px solid var(--border);border-radius:8px;
+            background:var(--bg);cursor:crosshair;display:block;margin:0 auto;touch-action:none">
+          </canvas>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--text2)">
+            <span style="color:var(--accent)">A: Sine <span id="v-a">25%</span></span>
+            <span style="color:var(--accent2)">B: Saw <span id="v-b">25%</span></span>
+            <span style="color:var(--green)">C: Sqr <span id="v-c">25%</span></span>
+            <span style="color:var(--accent3)">D: Tri <span id="v-d">25%</span></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Fuentes Vectoriales</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia base</span>
+              <span class="param-value" id="vec-freq-v">220 Hz</span>
+            </div>
+            <input type="range" id="vec-freq" min="55" max="880" value="220" step="1"
+              oninput="updateVecParam('freq',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Auto-movimiento XY</span>
+              <span class="param-value" id="vec-auto-v">Off</span>
+            </div>
+            <input type="range" id="vec-auto" min="0" max="2" value="0" step="0.05"
+              oninput="updateVecParam('auto',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Cutoff VCF</span>
+              <span class="param-value" id="vec-cutoff-v">3000 Hz</span>
+            </div>
+            <input type="range" id="vec-cutoff" min="200" max="8000" value="3000" step="50"
+              oninput="updateVecParam('cutoff',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona la síntesis vectorial?</div>
+        <p>Cuatro osciladores/fuentes ocupan las esquinas de un cuadrado. La posición XY del joystick
+          determina, mediante interpolación bilineal, cuánto contribuye cada fuente a la mezcla.
+          El centro = 25% de cada fuente; en una esquina = 100% de esa fuente.</p>
+        <ul>
+          <li><strong>Interpolación bilineal:</strong> A = (1-x)(1-y), B = x(1-y), C = (1-x)y, D = xy</li>
+          <li><strong>LFO vectorial:</strong> El punto puede moverse automáticamente con un LFO</li>
+          <li><strong>Fuentes variadas:</strong> Cada fuente puede ser una forma de onda diferente o un preset de FM</li>
+          <li><strong>Prophet VS:</strong> Primer sintetizador con esta técnica; combina síntesis digital con analogía</li>
+        </ul>
+      </div>
+    </div><!-- /vector -->
+
+    <!-- =========================================
+         9. SÍNTESIS ESPECTRAL
+         ========================================= -->
+    <div class="synth-panel" id="panel-spectral">
+      <div class="panel-header">
+        <div class="panel-title">
+          🌈 Síntesis Espectral
+          <span class="panel-tag">FFT DOMAIN</span>
+        </div>
+        <p class="panel-subtitle">
+          Opera directamente en el dominio de frecuencias (FFT). Manipula el espectro
+          sonoro directamente: amplifica, silencia, transpone o distorsiona frecuencias
+          individuales. Permite timbres imposibles en síntesis en tiempo.
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-spectral" onclick="toggleSynth('spectral')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-spectral">● LISTO</div>
+          <div class="transport-hint">Dibuja en el espectro para definir el timbre</div>
+        </div>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-spectral" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">📊 Espectro FFT</div>
+          <canvas class="fft" id="fft-spectral" width="400" height="100"></canvas>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <!-- Spectral editor -->
+        <div class="card full-width">
+          <div class="card-title">Editor Espectral — Haz clic/arrastra para modificar frecuencias</div>
+          <canvas id="spectral-editor" width="600" height="120"
+            style="width:100%;height:120px;display:block;background:var(--bg);border-radius:6px;
+            border:1px solid var(--border);cursor:crosshair;touch-action:none">
+          </canvas>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="wave-btn" onclick="setSpectralPreset('saw')">Sierra</button>
+            <button class="wave-btn" onclick="setSpectralPreset('square')">Cuadrada</button>
+            <button class="wave-btn" onclick="setSpectralPreset('odd')">Solo Impares</button>
+            <button class="wave-btn" onclick="setSpectralPreset('formant')">Formante</button>
+            <button class="wave-btn" onclick="setSpectralPreset('clear')">Limpiar</button>
+            <button class="wave-btn" onclick="setSpectralPreset('random')">Aleatorio</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Parámetros</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia fundamental</span>
+              <span class="param-value" id="spec-freq-v">110 Hz</span>
+            </div>
+            <input type="range" id="spec-freq" min="55" max="440" value="110" step="1"
+              oninput="updateSpecParam('freq',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Inharmonicidad</span>
+              <span class="param-value" id="spec-inharm-v">0.00</span>
+            </div>
+            <input type="range" id="spec-inharm" min="0" max="0.1" value="0" step="0.001"
+              oninput="updateSpecParam('inharm',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Transformaciones</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Spectral Blur</span>
+              <span class="param-value" id="spec-blur-v">0.0</span>
+            </div>
+            <input type="range" id="spec-blur" min="0" max="1" value="0" step="0.01"
+              oninput="updateSpecParam('blur',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Freeze espectral</span>
+              <span class="param-value" id="spec-freeze-v">Off</span>
+            </div>
+            <input type="range" id="spec-freeze" min="0" max="1" value="0" step="0.01"
+              oninput="updateSpecParam('freeze',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona la síntesis espectral?</div>
+        <p>La síntesis espectral trabaja directamente con las frecuencias del sonido. Usando la
+          Transformada de Fourier Inversa (IFFT), convierte amplitudes de frecuencias individuales
+          en señal de audio. Es como "pintar" el espectro y escuchar el resultado.</p>
+        <ul>
+          <li><strong>IFFT:</strong> Convierte el espectro de frecuencias en onda de tiempo</li>
+          <li><strong>Armónicos editables:</strong> Cada barra representa la amplitud de una frecuencia</li>
+          <li><strong>Inharmonicidad:</strong> Desafinar levemente los parciales = sonido de campana/piano</li>
+          <li><strong>Freeze:</strong> Congela el espectro en el tiempo = efecto de "sustain eterno"</li>
+        </ul>
+      </div>
+    </div><!-- /spectral -->
+
+    <!-- =========================================
+         10. MODELADO FÍSICO
+         ========================================= -->
+    <div class="synth-panel" id="panel-physical">
+      <div class="panel-header">
+        <div class="panel-title">
+          🎸 Modelado Físico
+          <span class="panel-tag">KARPLUS-STRONG</span>
+        </div>
+        <p class="panel-subtitle">
+          Simula las propiedades físicas de instrumentos reales. El algoritmo Karplus-Strong
+          simula una cuerda pulsada usando una línea de retardo y retroalimentación filtrada.
+          Base del Yamaha VL1 y la síntesis de cuerdas modernas.
+        </p>
+      </div>
+
+      <div class="transport">
+        <button class="play-btn" id="play-physical" onclick="toggleSynth('physical')">▶</button>
+        <div class="transport-info">
+          <div class="transport-status" id="status-physical">● LISTO</div>
+          <div class="transport-hint">Simula una cuerda pulsada (Karplus-Strong) · Usa el teclado para distintas notas</div>
+        </div>
+        <button onclick="retriggerPhysical()" style="
+          padding:8px 14px;border:1px solid var(--accent);background:var(--glow);
+          border-radius:8px;color:var(--accent);font-family:var(--mono);font-size:11px;
+          cursor:pointer;transition:all var(--transition);flex-shrink:0"
+          onmouseover="this.style.background='var(--accent)';this.style.color='#fff'"
+          onmouseout="this.style.background='var(--glow)';this.style.color='var(--accent)'"
+        >⚡ Re-pulsar</button>
+      </div>
+
+      <div class="visualizer-section">
+        <div class="visualizer-card">
+          <div class="viz-label">⚡ Osciloscopio</div>
+          <canvas class="scope" id="scope-physical" width="400" height="100"></canvas>
+        </div>
+        <div class="visualizer-card">
+          <div class="viz-label">📊 Espectro FFT</div>
+          <canvas class="fft" id="fft-physical" width="400" height="100"></canvas>
+        </div>
+      </div>
+
+      <div class="block-diagram">
+        <div class="card-title">Diagrama Karplus-Strong</div>
+        <div class="diagram-container">
+          <svg class="diagram-svg" viewBox="0 0 680 130" xmlns="http://www.w3.org/2000/svg">
+            <!-- NOISE burst -->
+            <rect class="block-rect block-mod" x="10" y="45" width="100" height="40"/>
+            <text class="block-text" x="60" y="60">EXCITADOR</text>
+            <text class="block-text block-sub" x="60" y="73">Ruido/impulso</text>
+            <!-- DELAY LINE -->
+            <rect class="block-rect block-wave" x="180" y="45" width="120" height="40"/>
+            <text class="block-text" x="240" y="60">LÍNEA RETARDO</text>
+            <text class="block-text block-sub" x="240" y="73">L = Fs/freq</text>
+            <!-- AVG FILTER -->
+            <rect class="block-rect block-filter" x="380" y="45" width="100" height="40"/>
+            <text class="block-text" x="430" y="60">FILTRO MEDIA</text>
+            <text class="block-text block-sub" x="430" y="73">y[n]=(x[n]+x[n-1])/2</text>
+            <!-- Feedback loop -->
+            <rect class="block-rect block-mix" x="555" y="45" width="80" height="40"/>
+            <text class="block-text" x="595" y="65">OUT + FB</text>
+            <!-- Feedback path -->
+            <path class="conn-line cv" d="M 595 85 Q 595 118 240 118 Q 140 118 180 80"
+              marker-end="url(#arrow-cv)"/>
+            <!-- Main path -->
+            <line class="conn-line audio" x1="110" y1="65" x2="178" y2="65" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="300" y1="65" x2="378" y2="65" marker-end="url(#arrow-audio)"/>
+            <line class="conn-line audio" x1="480" y1="65" x2="553" y2="65" marker-end="url(#arrow-audio)"/>
+            <!-- Labels -->
+            <text fill="var(--green)" font-size="8" font-family="monospace" x="350" y="122">FEEDBACK</text>
+            <text fill="var(--accent)" font-size="8" font-family="monospace" x="112" y="60">BURST</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="synth-grid">
+        <div class="card">
+          <div class="card-title">Parámetros de Cuerda</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Frecuencia (afinación)</span>
+              <span class="param-value" id="ph-freq-v">220 Hz</span>
+            </div>
+            <input type="range" id="ph-freq" min="55" max="880" value="220" step="1"
+              oninput="updatePHParam('freq',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Amortiguamiento (decay)</span>
+              <span class="param-value" id="ph-damp-v">0.99</span>
+            </div>
+            <input type="range" id="ph-damp" min="0.9" max="0.9999" value="0.99" step="0.0001"
+              oninput="updatePHParam('damp',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Excitador (Pluck)</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Tipo de excitación</span>
+            </div>
+            <select id="ph-excite" onchange="updatePHParam('excite',this.value)">
+              <option value="noise">Ruido blanco (punteo)</option>
+              <option value="impulse">Impulso (mazo)</option>
+              <option value="sine">Sinebursto (arco)</option>
+            </select>
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Cuerpo (resonancia)</span>
+              <span class="param-value" id="ph-body-v">0.5</span>
+            </div>
+            <input type="range" id="ph-body" min="0" max="1" value="0.5" step="0.01"
+              oninput="updatePHParam('body',this.value)">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Presets de instrumento</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <button class="wave-btn" onclick="setPHPreset('guitar')">Guitarra</button>
+            <button class="wave-btn" onclick="setPHPreset('bass')">Bajo</button>
+            <button class="wave-btn" onclick="setPHPreset('harp')">Arpa</button>
+            <button class="wave-btn" onclick="setPHPreset('sitar')">Sitar</button>
+            <button class="wave-btn" onclick="setPHPreset('pizzicato')">Pizzicato</button>
+            <button class="wave-btn" onclick="setPHPreset('percuss')">Percusión</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Modelo Extendido</div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Tensión (inharmonicidad)</span>
+              <span class="param-value" id="ph-tension-v">0.0</span>
+            </div>
+            <input type="range" id="ph-tension" min="0" max="0.5" value="0" step="0.01"
+              oninput="updatePHParam('tension',this.value)">
+          </div>
+          <div class="param-group">
+            <div class="param-label">
+              <span class="param-name">Posición del pluck</span>
+              <span class="param-value" id="ph-pos-v">0.5</span>
+            </div>
+            <input type="range" id="ph-pos" min="0.1" max="0.9" value="0.5" step="0.01"
+              oninput="updatePHParam('pos',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-box-title">¿Cómo funciona el Modelado Físico (Karplus-Strong)?</div>
+        <p>El algoritmo Karplus-Strong simula una cuerda con una arquitectura elegante: un buffer
+          circular (línea de retardo) cuya longitud define la frecuencia. Un filtro de media suaviza
+          el buffer en cada ciclo, simulando la disipación de energía de una cuerda real.</p>
+        <ul>
+          <li><strong>Excitador:</strong> Ruido blanco inicial = energía distribuida en todas frecuencias</li>
+          <li><strong>Línea retardo:</strong> Buffer de longitud L = Fs/f0 → define el tono</li>
+          <li><strong>Filtro media:</strong> y[n] = (x[n] + x[n-1]) * damp/2 → amortiguamiento natural</li>
+          <li><strong>Feedback:</strong> La salida vuelve a entrar → resonancias se refuerzan, ruido decae</li>
+        </ul>
+      </div>
+    </div><!-- /physical -->
+
+  </main>
+</div>
+
+<!-- FLOATING KEYBOARD BAR -->
+<div id="keyboard-bar" style="
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(10,10,15,0.97); backdrop-filter: blur(20px);
+  border-top: 1px solid #2a2a3a;
+  padding: 10px 20px 14px;
+  display: flex; align-items: center; gap: 16px;
+  transition: transform 0.3s ease;
+">
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <span style="font-family:'Space Mono',monospace;font-size:10px;color:#5a5a72;text-transform:uppercase;letter-spacing:1px">Teclado</span>
+    <button onclick="toggleKeyboard()" id="kb-toggle"
+      style="font-size:10px;font-family:'Space Mono',monospace;padding:3px 8px;border:1px solid #2a2a3a;
+      background:#1a1a24;border-radius:4px;color:#9090a8;cursor:pointer">▲ Ocultar</button>
+  </div>
+
+  <!-- Mini Piano Keys -->
+  <div id="mini-keyboard" style="position:relative;height:52px;flex:1;max-width:700px;overflow:hidden">
+    <!-- Generated by JS -->
+  </div>
+
+  <!-- Volume -->
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <span style="font-size:10px;font-family:'Space Mono',monospace;color:#5a5a72">VOL</span>
+    <input type="range" id="master-vol" min="0" max="1" value="0.6" step="0.01"
+      style="width:80px" oninput="setMasterVol(this.value)">
+    <span style="font-size:10px;font-family:'Space Mono',monospace;color:#7c6af5" id="vol-v">60%</span>
+  </div>
+</div>
+
+<footer style="margin-bottom:80px">
+  SynthLab v2.0 — Explorador educativo de síntesis de sonido · Web Audio API · 10 tipos implementados
+</footer>
+
+<!-- =====================================================================
+     JAVASCRIPT — MOTOR COMPLETO
+     ===================================================================== -->
+<script>
+'use strict';
+
+/* ============================================================
+   AUDIO CONTEXT & GLOBAL STATE
+   ============================================================ */
+let audioCtx = null;
+let masterGain = null;
+let analyserScope = null; // oscilloscope
+let analyserFFT = null;   // spectrum
+let animFrameId = null;
+
+// Per-synth state
+const synthState = {};
+const synthNodes = {};
+const synthParams = {};
+
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.6;
+
+    // Analyser for oscilloscope
+    analyserScope = audioCtx.createAnalyser();
+    analyserScope.fftSize = 2048;
+
+    // Analyser for FFT
+    analyserFFT = audioCtx.createAnalyser();
+    analyserFFT.fftSize = 2048;
+    analyserFFT.smoothingTimeConstant = 0.8;
+
+    masterGain.connect(analyserScope);
+    masterGain.connect(analyserFFT);
+    masterGain.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+let currentPanel = 'subtractive';
+
+function showPanel(id) {
+  document.querySelectorAll('.synth-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+
+  // Mark nav item active
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)) {
+      n.classList.add('active');
+    }
+  });
+
+  // Stop previous synth
+  if (currentPanel !== id) {
+    stopSynth(currentPanel);
+  }
+  currentPanel = id;
+
+  // Init visualizer for new panel
+  startVisualizer(id);
+}
+
+/* ============================================================
+   THEME TOGGLE
+   ============================================================ */
+document.getElementById('themeBtn').addEventListener('click', () => {
+  document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent =
+    document.body.classList.contains('light') ? '🌞' : '🌙';
+});
+
+/* ============================================================
+   PLAY / STOP CONTROL
+   ============================================================ */
+function toggleSynth(id) {
+  ensureAudioCtx();
+  if (synthState[id]) {
+    stopSynth(id);
+  } else {
+    startSynth(id);
+  }
+}
+
+function stopSynth(id) {
+  if (!synthState[id]) return;
+  synthState[id] = false;
+
+  // Stop granular timer
+  if (id === 'granular' && granularTimer) {
+    clearTimeout(granularTimer);
+    granularTimer = null;
+  }
+
+  const btn = document.getElementById('play-' + id);
+  const sta = document.getElementById('status-' + id);
+  if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+  if (sta) sta.innerHTML = '● LISTO';
+
+  const nodes = synthNodes[id];
+  if (nodes && audioCtx) {
+    const t = audioCtx.currentTime + 0.08;
+
+    // Flatten: handle both direct nodes and arrays of nodes
+    const flatNodes = [];
+    Object.values(nodes).forEach(n => {
+      if (!n) return;
+      if (Array.isArray(n)) n.forEach(x => x && flatNodes.push(x));
+      else flatNodes.push(n);
+    });
+
+    flatNodes.forEach(n => {
+      try {
+        if (n.gain && n.gain.linearRampToValueAtTime) {
+          n.gain.cancelScheduledValues(audioCtx.currentTime);
+          n.gain.linearRampToValueAtTime(0, t);
+        }
+      } catch(e){}
+    });
+
+    setTimeout(() => {
+      flatNodes.forEach(n => {
+        try { n.stop && n.stop(0); } catch(e){}
+        try { n.disconnect && n.disconnect(); } catch(e){}
+      });
+      synthNodes[id] = {};
+    }, 120);
+  } else {
+    synthNodes[id] = {};
+  }
+}
+
+function startSynth(id) {
+  synthState[id] = true;
+
+  const btn = document.getElementById('play-' + id);
+  const sta = document.getElementById('status-' + id);
+  if (btn) { btn.textContent = '⏹'; btn.classList.add('playing'); }
+  if (sta) sta.innerHTML = '● <span>SONANDO</span>';
+
+  switch(id) {
+    case 'subtractive': startSubtractive(); break;
+    case 'additive':    startAdditive(); break;
+    case 'fm':          startFM(); break;
+    case 'la':          startLA(); break;
+    case 'wavetable':   startWavetable(); break;
+    case 'granular':    startGranular(); break;
+    case 'sampler':     startSampler(); break;
+    case 'vector':      startVector(); break;
+    case 'spectral':    startSpectral(); break;
+    case 'physical':    startPhysical(); break;
+  }
+}
+
+/* ============================================================
+   HELPER: safe param read
+   ============================================================ */
+function P(id) { const el = document.getElementById(id); return el ? parseFloat(el.value) : 0; }
+function S(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+
+/* ============================================================
+   1. SÍNTESIS SUSTRACTIVA
+   ============================================================ */
+synthParams.subtractive = {
+  wave: 'sawtooth', freq: 220, detune: 0,
+  filtertype: 'lowpass', cutoff: 1200, res: 5,
+  atk: 0.01, dec: 0.3, sus: 0.7, rel: 0.5,
+  lfofreq: 0.5, lfodepth: 200
+};
+
+function startSubtractive() {
+  const p = synthParams.subtractive;
+  const osc = audioCtx.createOscillator();
+  const filter = audioCtx.createBiquadFilter();
+  const amp = audioCtx.createGain();
+  const lfo = audioCtx.createOscillator();
+  const lfoGain = audioCtx.createGain();
+
+  osc.type = p.wave;
+  osc.frequency.value = p.freq;
+  osc.detune.value = p.detune;
+  filter.type = p.filtertype;
+  filter.frequency.value = p.cutoff;
+  filter.Q.value = p.res;
+  lfo.type = 'sine';
+  lfo.frequency.value = p.lfofreq;
+  lfoGain.gain.value = p.lfodepth;
+
+  // ADSR on amp
+  amp.gain.value = 0;
+  const t = audioCtx.currentTime;
+  amp.gain.setValueAtTime(0, t);
+  amp.gain.linearRampToValueAtTime(0.8, t + p.atk);
+  amp.gain.linearRampToValueAtTime(p.sus * 0.8, t + p.atk + p.dec);
+
+  lfo.connect(lfoGain);
+  lfoGain.connect(filter.frequency);
+  osc.connect(filter);
+  filter.connect(amp);
+  amp.connect(masterGain);
+
+  osc.start(); lfo.start();
+  synthNodes.subtractive = { osc, filter, amp, lfo, lfoGain };
+}
+
+function updateSubParam(param, val) {
+  const p = synthParams.subtractive;
+  const nodes = synthNodes.subtractive || {};
+  val = parseFloat(val);
+
+  switch(param) {
+    case 'freq':
+      p.freq = val;
+      document.getElementById('sub-freq-v').textContent = val + ' Hz';
+      if (nodes.osc) nodes.osc.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.02);
+      break;
+    case 'detune':
+      p.detune = val;
+      document.getElementById('sub-detune-v').textContent = val + ' ct';
+      if (nodes.osc) nodes.osc.detune.setTargetAtTime(val, audioCtx.currentTime, 0.01);
+      break;
+    case 'filtertype':
+      p.filtertype = val;
+      if (nodes.filter) nodes.filter.type = val;
+      break;
+    case 'cutoff':
+      p.cutoff = val;
+      document.getElementById('sub-cutoff-v').textContent = val + ' Hz';
+      if (nodes.filter) nodes.filter.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.02);
+      break;
+    case 'res':
+      p.res = val;
+      document.getElementById('sub-res-v').textContent = val.toFixed(1);
+      if (nodes.filter) nodes.filter.Q.setTargetAtTime(val, audioCtx.currentTime, 0.01);
+      break;
+    case 'atk': p.atk = val; document.getElementById('sub-atk-v').textContent = val.toFixed(3) + ' s'; break;
+    case 'dec': p.dec = val; document.getElementById('sub-dec-v').textContent = val.toFixed(2) + ' s'; break;
+    case 'sus': p.sus = val; document.getElementById('sub-sus-v').textContent = val.toFixed(2); break;
+    case 'rel': p.rel = val; document.getElementById('sub-rel-v').textContent = val.toFixed(2) + ' s'; break;
+    case 'lfofreq':
+      p.lfofreq = val;
+      document.getElementById('sub-lfofreq-v').textContent = val.toFixed(1) + ' Hz';
+      if (nodes.lfo) nodes.lfo.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.01);
+      break;
+    case 'lfodepth':
+      p.lfodepth = val;
+      document.getElementById('sub-lfodepth-v').textContent = val + ' Hz';
+      if (nodes.lfoGain) nodes.lfoGain.gain.setTargetAtTime(val, audioCtx.currentTime, 0.01);
+      break;
+  }
+}
+
+function setSubWave(wave, btn) {
+  synthParams.subtractive.wave = wave;
+  document.querySelectorAll('#panel-subtractive .wave-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (synthNodes.subtractive && synthNodes.subtractive.osc) {
+    synthNodes.subtractive.osc.type = wave;
+  }
+}
+
+/* ============================================================
+   2. SÍNTESIS ADITIVA
+   ============================================================ */
+const HARMONIC_COUNT = 16;
+const harmonicAmps = new Float32Array(HARMONIC_COUNT).fill(0);
+harmonicAmps[0] = 1.0; // fundamental
+
+synthParams.additive = { freq: 220, vib: 0 };
+
+// Build harmonic bars
+(function buildHarmonicsGrid() {
+  const grid = document.getElementById('harmonics-grid');
+  for (let i = 0; i < HARMONIC_COUNT; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'harmonic-bar';
+    bar.dataset.n = i + 1;
+    bar.dataset.i = i;
+    bar.style.height = (harmonicAmps[i] * 100) + '%';
+    // Drag to change amplitude
+    let dragging = false;
+    const onMove = (e) => {
+      if (!dragging) return;
+      const rect = bar.parentElement.getBoundingClientRect();
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const ratio = 1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+      harmonicAmps[i] = ratio;
+      bar.style.height = (ratio * 100) + '%';
+      updateAdditiveNodes();
+    };
+    bar.addEventListener('mousedown', () => { dragging = true; });
+    bar.addEventListener('touchstart', (e) => { dragging = true; e.preventDefault(); }, {passive:false});
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('mouseup', () => { dragging = false; });
+    document.addEventListener('touchend', () => { dragging = false; });
+    grid.appendChild(bar);
+  }
+})();
+
+function updateAdditiveNodes() {
+  const nodes = synthNodes.additive;
+  if (!nodes) return;
+  nodes.oscNodes.forEach((osc, i) => {
+    if (nodes.gainNodes[i]) {
+      nodes.gainNodes[i].gain.setTargetAtTime(harmonicAmps[i] / HARMONIC_COUNT, audioCtx.currentTime, 0.01);
+    }
+  });
+}
+
+function startAdditive() {
+  const p = synthParams.additive;
+  const masterAmpNode = audioCtx.createGain();
+  masterAmpNode.gain.value = 0;
+
+  const t = audioCtx.currentTime;
+  masterAmpNode.gain.linearRampToValueAtTime(0.7, t + 0.02);
+  masterAmpNode.connect(masterGain);
+
+  const oscNodes = [];
+  const gainNodes = [];
+  const vibLFO = audioCtx.createOscillator();
+  const vibGain = audioCtx.createGain();
+  vibLFO.frequency.value = p.vib;
+  vibGain.gain.value = p.vib > 0 ? 5 : 0;
+  vibLFO.connect(vibGain);
+
+  for (let i = 0; i < HARMONIC_COUNT; i++) {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = p.freq * (i + 1);
+    g.gain.value = harmonicAmps[i] / HARMONIC_COUNT;
+    vibGain.connect(osc.frequency);
+    osc.connect(g);
+    g.connect(masterAmpNode);
+    osc.start();
+    oscNodes.push(osc);
+    gainNodes.push(g);
+  }
+  vibLFO.start();
+  synthNodes.additive = { oscNodes, gainNodes, gain: masterAmpNode, vibLFO, vibGain };
+}
+
+function updateAddParam(param, val) {
+  const p = synthParams.additive;
+  val = parseFloat(val);
+  const nodes = synthNodes.additive;
+  switch(param) {
+    case 'freq':
+      p.freq = val;
+      document.getElementById('add-freq-v').textContent = val + ' Hz';
+      if (nodes) {
+        nodes.oscNodes.forEach((osc, i) => {
+          osc.frequency.setTargetAtTime(val * (i + 1), audioCtx.currentTime, 0.02);
+        });
+      }
+      break;
+    case 'vib':
+      p.vib = val;
+      document.getElementById('add-vib-v').textContent = val.toFixed(1) + ' Hz';
+      if (nodes) {
+        nodes.vibLFO.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.01);
+        nodes.vibGain.gain.setTargetAtTime(val > 0 ? val * 8 : 0, audioCtx.currentTime, 0.01);
+      }
+      break;
+  }
+}
+
+function setAddPreset(preset) {
+  const presets = {
+    sine:     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    organ:    [1,0.8,0.5,0.3,0.2,0.15,0.1,0.08,0.05,0.03,0.02,0.01,0,0,0,0],
+    brass:    [0.8,0.9,0.7,0.5,0.4,0.3,0.2,0.15,0.1,0.08,0.05,0.03,0.02,0.01,0,0],
+    clarinet: [1,0,0.7,0,0.3,0,0.15,0,0.08,0,0.04,0,0.02,0,0,0],
+    bell:     [1,0,0,0.7,0,0,0.4,0,0.2,0,0,0.1,0,0,0.05,0],
+    saw:      Array.from({length:16},(v,i)=>1/(i+1))
+  };
+  const p = presets[preset];
+  if (!p) return;
+  p.forEach((v, i) => {
+    harmonicAmps[i] = v;
+    const bars = document.querySelectorAll('.harmonic-bar');
+    if (bars[i]) bars[i].style.height = (v * 100) + '%';
+  });
+  updateAdditiveNodes();
+}
+
+/* ============================================================
+   3. SÍNTESIS FM
+   ============================================================ */
+synthParams.fm = { freq: 220, ratio: 2, index: 50, atk: 0.01, dec: 0.5 };
+
+function startFM() {
+  const p = synthParams.fm;
+  const carrier = audioCtx.createOscillator();
+  const modulator = audioCtx.createOscillator();
+  const modGain = audioCtx.createGain();
+  const ampGain = audioCtx.createGain();
+
+  carrier.type = 'sine';
+  carrier.frequency.value = p.freq;
+  modulator.type = 'sine';
+  modulator.frequency.value = p.freq * p.ratio;
+  modGain.gain.value = p.index;
+
+  ampGain.gain.value = 0;
+  const t = audioCtx.currentTime;
+  ampGain.gain.linearRampToValueAtTime(0.7, t + p.atk);
+  ampGain.gain.linearRampToValueAtTime(0.4, t + p.atk + p.dec);
+
+  modulator.connect(modGain);
+  modGain.connect(carrier.frequency);
+  carrier.connect(ampGain);
+  ampGain.connect(masterGain);
+
+  carrier.start(); modulator.start();
+  synthNodes.fm = { carrier, modulator, modGain, amp: ampGain };
+}
+
+function updateFMParam(param, val) {
+  const p = synthParams.fm;
+  val = parseFloat(val);
+  const nodes = synthNodes.fm;
+  switch(param) {
+    case 'freq':
+      p.freq = val;
+      document.getElementById('fm-freq-v').textContent = val + ' Hz';
+      if (nodes) {
+        nodes.carrier.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.02);
+        nodes.modulator.frequency.setTargetAtTime(val * p.ratio, audioCtx.currentTime, 0.02);
+      }
+      break;
+    case 'ratio':
+      p.ratio = val;
+      document.getElementById('fm-ratio-v').textContent = val.toFixed(2);
+      if (nodes) nodes.modulator.frequency.setTargetAtTime(p.freq * val, audioCtx.currentTime, 0.02);
+      break;
+    case 'index':
+      p.index = val;
+      document.getElementById('fm-index-v').textContent = val;
+      if (nodes) nodes.modGain.gain.setTargetAtTime(val, audioCtx.currentTime, 0.01);
+      break;
+    case 'atk': p.atk = val; document.getElementById('fm-atk-v').textContent = val.toFixed(3) + ' s'; break;
+    case 'dec': p.dec = val; document.getElementById('fm-dec-v').textContent = val.toFixed(2) + ' s'; break;
+  }
+}
+
+function setFMPreset(preset) {
+  const presets = {
+    epiano:    { ratio: 14, index: 2 },
+    bass:      { ratio: 1, index: 3 },
+    bell:      { ratio: 3.5, index: 8 },
+    brass:     { ratio: 1, index: 12 },
+    woodwind:  { ratio: 2, index: 4 },
+    percussion:{ ratio: 7, index: 20 }
+  };
+  const pr = presets[preset];
+  if (!pr) return;
+  synthParams.fm.ratio = pr.ratio;
+  synthParams.fm.index = pr.index;
+  document.getElementById('fm-ratio').value = pr.ratio;
+  document.getElementById('fm-index').value = pr.index;
+  document.getElementById('fm-ratio-v').textContent = pr.ratio.toFixed(2);
+  document.getElementById('fm-index-v').textContent = pr.index;
+  if (synthNodes.fm) {
+    synthNodes.fm.modulator.frequency.setTargetAtTime(synthParams.fm.freq * pr.ratio, audioCtx.currentTime, 0.02);
+    synthNodes.fm.modGain.gain.setTargetAtTime(pr.index, audioCtx.currentTime, 0.01);
+  }
+}
+
+/* ============================================================
+   4. SÍNTESIS LA
+   ============================================================ */
+synthParams.la = { sample: 'piano', transdur: 0.15, synwave: 'sine', freq: 220, mix: 50, chorus: 0.3, atk: 0.01, rel: 1.0 };
+
+function startLA() {
+  const p = synthParams.la;
+  // PCM part: synthesized "transient" using noise burst
+  const bufLen = Math.floor(audioCtx.sampleRate * 0.5);
+  const transBuffer = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const data = transBuffer.getChannelData(0);
+  const transSamples = Math.floor(audioCtx.sampleRate * p.transdur);
+
+  // Different transient shapes
+  for (let i = 0; i < bufLen; i++) {
+    if (i < transSamples) {
+      const env = Math.exp(-i / (transSamples * 0.3));
+      // Sample-specific character
+      let noise;
+      switch(p.sample) {
+        case 'brass':   noise = Math.sign(Math.sin(i * 0.5)) * env; break;
+        case 'strings': noise = (Math.random() * 2 - 1) * 0.3 * env + Math.sin(i * 0.1) * 0.7 * env; break;
+        case 'click':   noise = (i < transSamples * 0.05) ? (Math.random() * 2 - 1) * env : 0; break;
+        default:        noise = (Math.random() * 2 - 1) * 0.5 * env + Math.sin(i * 0.05) * 0.5 * env;
+      }
+      data[i] = noise;
+    } else {
+      data[i] = 0;
+    }
+  }
+
+  const transSource = audioCtx.createBufferSource();
+  transSource.buffer = transBuffer;
+
+  // Synth part
+  const synthOsc = audioCtx.createOscillator();
+  synthOsc.type = p.synwave;
+  synthOsc.frequency.value = p.freq;
+
+  // Mix
+  const pcmGain = audioCtx.createGain();
+  const synGain = audioCtx.createGain();
+  const ampGain = audioCtx.createGain();
+  const mix = p.mix / 100;
+  pcmGain.gain.value = mix;
+  synGain.gain.value = 1 - mix;
+
+  ampGain.gain.value = 0;
+  const t = audioCtx.currentTime;
+  ampGain.gain.linearRampToValueAtTime(0.7, t + p.atk);
+
+  // Simple chorus
+  const chorusDelay = audioCtx.createDelay(0.05);
+  const chorusFb = audioCtx.createGain();
+  chorusDelay.delayTime.value = 0.015;
+  chorusFb.gain.value = p.chorus * 0.4;
+
+  transSource.connect(pcmGain);
+  synthOsc.connect(synGain);
+  pcmGain.connect(ampGain);
+  synGain.connect(ampGain);
+  ampGain.connect(chorusDelay);
+  chorusDelay.connect(chorusFb);
+  chorusFb.connect(masterGain);
+  ampGain.connect(masterGain);
+
+  synthOsc.start(); transSource.start();
+  synthNodes.la = { transSource, synthOsc, pcmGain, synGain, amp: ampGain, chorusDelay, chorusFb };
+}
+
+function updateLAParam(param, val) {
+  const p = synthParams.la;
+  val = typeof val === 'string' && !isNaN(val) ? parseFloat(val) : val;
+  const nodes = synthNodes.la;
+  switch(param) {
+    case 'sample': p.sample = val; break;
+    case 'transdur': p.transdur = parseFloat(val); document.getElementById('la-transdur-v').textContent = parseFloat(val).toFixed(2) + ' s'; break;
+    case 'synwave': p.synwave = val; if(nodes && nodes.synthOsc) nodes.synthOsc.type = val; break;
+    case 'freq':
+      p.freq = parseFloat(val);
+      document.getElementById('la-freq-v').textContent = parseFloat(val) + ' Hz';
+      if (nodes && nodes.synthOsc) nodes.synthOsc.frequency.setTargetAtTime(parseFloat(val), audioCtx.currentTime, 0.02);
+      break;
+    case 'mix':
+      p.mix = parseFloat(val);
+      document.getElementById('la-mix-v').textContent = parseFloat(val) + '%';
+      if (nodes) {
+        nodes.pcmGain.gain.setTargetAtTime(parseFloat(val)/100, audioCtx.currentTime, 0.01);
+        nodes.synGain.gain.setTargetAtTime(1-parseFloat(val)/100, audioCtx.currentTime, 0.01);
+      }
+      break;
+    case 'chorus':
+      p.chorus = parseFloat(val);
+      document.getElementById('la-chorus-v').textContent = parseFloat(val).toFixed(2);
+      if (nodes && nodes.chorusFb) nodes.chorusFb.gain.setTargetAtTime(parseFloat(val)*0.4, audioCtx.currentTime, 0.01);
+      break;
+    case 'atk': p.atk = parseFloat(val); document.getElementById('la-atk-v').textContent = parseFloat(val).toFixed(3) + ' s'; break;
+    case 'rel': p.rel = parseFloat(val); document.getElementById('la-rel-v').textContent = parseFloat(val).toFixed(2) + ' s'; break;
+  }
+}
+
+/* ============================================================
+   5. WAVETABLE
+   ============================================================ */
+synthParams.wavetable = { freq: 220, pos: 0, table: 'basic', morphspd: 0, cutoff: 3000 };
+
+// Build wavetables
+function buildWavetable(type) {
+  const N = 64; // number of frames
+  const L = 256; // samples per frame
+  const tables = [];
+  for (let frame = 0; frame < N; frame++) {
+    const t = frame / N;
+    const buf = new Float32Array(L);
+    for (let i = 0; i < L; i++) {
+      const phase = (i / L) * 2 * Math.PI;
+      switch(type) {
+        case 'basic':
+          // interpolate sine (t=0) to sawtooth (t=1)
+          const sine = Math.sin(phase);
+          let saw = 0;
+          for (let h = 1; h <= 16; h++) saw += Math.sin(h * phase) / h;
+          saw = (2/Math.PI) * saw;
+          buf[i] = sine * (1-t) + saw * t;
+          break;
+        case 'formant': {
+          // vowel-like formants
+          const f1 = t < 0.5 ? 700 + t*1400 : 2100 - (t-0.5)*1400;
+          let v = 0;
+          for (let h = 1; h <= 20; h++) {
+            const frq = h * (L / 4);
+            const env = Math.exp(-Math.pow(frq - f1*4, 2) / (f1*80));
+            v += env * Math.sin(h * phase) / h;
+          }
+          buf[i] = v * 0.5;
+          break;
+        }
+        case 'bright': {
+          let b = 0;
+          for (let h = 1; h <= 32; h++) b += Math.sin(h*phase)/(h*Math.pow(1.1,h*t));
+          buf[i] = b * 0.15;
+          break;
+        }
+        case 'hollow': {
+          let ho = 0;
+          for (let h = 1; h <= 16; h++) {
+            if (h % 2 === 1) ho += Math.sin(h*phase)/h * (1 - t*0.7);
+            else ho += Math.sin(h*phase)/h * (t*0.5);
+          }
+          buf[i] = ho * 0.3;
+          break;
+        }
+      }
+    }
+    tables.push(buf);
+  }
+  return tables;
+}
+
+let wtTables = buildWavetable('basic');
+let wtMorphPhase = 0;
+
+function startWavetable() {
+  const p = synthParams.wavetable;
+  const frameCount = audioCtx.sampleRate * 10; // 10s buffer for periodic playback trick
+  // Use PeriodicWave approach: build from current pos
+  const pos = p.pos;
+  const tableIdx = Math.floor(pos * (wtTables.length - 1));
+  const frame = wtTables[tableIdx];
+
+  // Build PeriodicWave from frame
+  const real = new Float32Array(frame.length / 2);
+  const imag = new Float32Array(frame.length / 2);
+  // Compute DFT coefficients
+  const L = frame.length;
+  for (let k = 1; k < L/2; k++) {
+    let re = 0, im = 0;
+    for (let n = 0; n < L; n++) {
+      const phi = (2 * Math.PI * k * n) / L;
+      re += frame[n] * Math.cos(phi);
+      im -= frame[n] * Math.sin(phi);
+    }
+    real[k] = re / (L/2);
+    imag[k] = im / (L/2);
+  }
+  const wave = audioCtx.createPeriodicWave(real, imag, {disableNormalization: false});
+  const osc = audioCtx.createOscillator();
+  osc.setPeriodicWave(wave);
+  osc.frequency.value = p.freq;
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = p.cutoff;
+
+  const amp = audioCtx.createGain();
+  amp.gain.value = 0;
+  amp.gain.linearRampToValueAtTime(0.7, audioCtx.currentTime + 0.02);
+
+  osc.connect(filter);
+  filter.connect(amp);
+  amp.connect(masterGain);
+  osc.start();
+
+  synthNodes.wavetable = { osc, filter, amp, wave };
+
+  // Start morph animation
+  if (p.morphspd > 0) startWTMorph();
+}
+
+function startWTMorph() {
+  const p = synthParams.wavetable;
+  function tick() {
+    if (!synthState.wavetable) return;
+    if (p.morphspd > 0) {
+      wtMorphPhase = (wtMorphPhase + p.morphspd * 0.01) % 1;
+      p.pos = wtMorphPhase;
+      const el = document.getElementById('wt-pos');
+      if (el) el.value = wtMorphPhase;
+      document.getElementById('wt-pos-v').textContent = wtMorphPhase.toFixed(2);
+      updateWTWave();
+      drawWavetableViz();
+    }
+    setTimeout(tick, 50);
+  }
+  tick();
+}
+
+function updateWTWave() {
+  const nodes = synthNodes.wavetable;
+  if (!nodes || !nodes.osc) return;
+  const p = synthParams.wavetable;
+  const tableIdx = Math.min(wtTables.length - 1, Math.floor(p.pos * wtTables.length));
+  const frame = wtTables[tableIdx];
+  const L = frame.length;
+  const real = new Float32Array(L/2);
+  const imag = new Float32Array(L/2);
+  for (let k = 1; k < L/2; k++) {
+    let re = 0, im = 0;
+    for (let n = 0; n < L; n++) {
+      const phi = (2 * Math.PI * k * n) / L;
+      re += frame[n] * Math.cos(phi);
+      im -= frame[n] * Math.sin(phi);
+    }
+    real[k] = re / (L/2);
+    imag[k] = im / (L/2);
+  }
+  try {
+    const wave = audioCtx.createPeriodicWave(real, imag, {disableNormalization: false});
+    nodes.osc.setPeriodicWave(wave);
+  } catch(e) {}
+}
+
+function updateWTParam(param, val) {
+  const p = synthParams.wavetable;
+  val = parseFloat(val) || val;
+  const nodes = synthNodes.wavetable;
+  switch(param) {
+    case 'freq':
+      p.freq = parseFloat(val);
+      document.getElementById('wt-freq-v').textContent = parseFloat(val) + ' Hz';
+      if (nodes && nodes.osc) nodes.osc.frequency.setTargetAtTime(parseFloat(val), audioCtx.currentTime, 0.02);
+      break;
+    case 'pos':
+      p.pos = parseFloat(val);
+      document.getElementById('wt-pos-v').textContent = parseFloat(val).toFixed(2);
+      updateWTWave();
+      drawWavetableViz();
+      break;
+    case 'table':
+      p.table = val;
+      wtTables = buildWavetable(val);
+      updateWTWave();
+      break;
+    case 'morphspd':
+      p.morphspd = parseFloat(val);
+      document.getElementById('wt-morphspd-v').textContent = parseFloat(val).toFixed(2) + ' Hz';
+      break;
+    case 'cutoff':
+      p.cutoff = parseFloat(val);
+      document.getElementById('wt-cutoff-v').textContent = parseFloat(val) + ' Hz';
+      if (nodes && nodes.filter) nodes.filter.frequency.setTargetAtTime(parseFloat(val), audioCtx.currentTime, 0.02);
+      break;
+  }
+}
+
+function drawWavetableViz() {
+  const canvas = document.getElementById('wavetable-viz');
+  if (!canvas) return;
+  const ctx2 = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx2.clearRect(0, 0, w, h);
+
+  // Draw multiple frames with color gradient
+  const p = synthParams.wavetable;
+  const tableCount = Math.min(wtTables.length, 20);
+  const step = Math.floor(wtTables.length / tableCount);
+  for (let fi = 0; fi < tableCount; fi++) {
+    const frame = wtTables[fi * step];
+    const alpha = fi === Math.floor(p.pos * tableCount) ? 1.0 : 0.2;
+    const hue = (fi / tableCount) * 280 + 200;
+    ctx2.strokeStyle = `hsla(${hue}, 80%, 60%, ${alpha})`;
+    ctx2.lineWidth = alpha > 0.5 ? 2 : 1;
+    ctx2.beginPath();
+    for (let i = 0; i < frame.length; i++) {
+      const x = (i / frame.length) * w;
+      const y = h/2 - frame[i] * h * 0.4;
+      i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+    }
+    ctx2.stroke();
+  }
+}
+
+/* ============================================================
+   6. GRANULAR
+   ============================================================ */
+synthParams.granular = { size: 80, density: 8, freq: 220, pitchrand: 0, window: 'hann', reverb: 0.2 };
+let granularTimer = null;
+
+function startGranular() {
+  const p = synthParams.granular;
+  // Setup reverb
+  const convolver = audioCtx.createConvolver();
+  const reverbLen = audioCtx.sampleRate * 2;
+  const reverbBuf = audioCtx.createBuffer(2, reverbLen, audioCtx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = reverbBuf.getChannelData(ch);
+    for (let i = 0; i < reverbLen; i++) d[i] = (Math.random()*2-1) * Math.exp(-i / (reverbLen*0.5));
+  }
+  convolver.buffer = reverbBuf;
+
+  const dryGain = audioCtx.createGain();
+  const wetGain = audioCtx.createGain();
+  dryGain.gain.value = 1 - p.reverb;
+  wetGain.gain.value = p.reverb;
+  dryGain.connect(masterGain);
+  convolver.connect(wetGain);
+  wetGain.connect(masterGain);
+
+  synthNodes.granular = { convolver, dryGain, wetGain, grains: [] };
+
+  // Schedule grains
+  function scheduleGrain() {
+    if (!synthState.granular) return;
+    const grainDur = synthParams.granular.size / 1000;
+    const freq = synthParams.granular.freq;
+    const pitchVar = synthParams.granular.pitchrand;
+
+    // Create a grain = short sine burst with envelope
+    const sampleCount = Math.floor(audioCtx.sampleRate * grainDur);
+    const grainBuf = audioCtx.createBuffer(1, sampleCount, audioCtx.sampleRate);
+    const data = grainBuf.getChannelData(0);
+    const freqWithRand = freq * Math.pow(2, (Math.random() * 2 - 1) * pitchVar / 1200);
+
+    for (let i = 0; i < sampleCount; i++) {
+      const phase = (i / audioCtx.sampleRate) * freqWithRand * 2 * Math.PI;
+      let env;
+      const t = i / sampleCount;
+      switch(synthParams.granular.window) {
+        case 'hann':      env = 0.5 * (1 - Math.cos(2 * Math.PI * t)); break;
+        case 'gaussian':  env = Math.exp(-Math.pow((t - 0.5) * 4, 2)); break;
+        case 'rectangular': env = 1; break;
+        default: env = 0.5 * (1 - Math.cos(2 * Math.PI * t));
+      }
+      data[i] = Math.sin(phase) * env;
+    }
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = grainBuf;
+    const grainGain = audioCtx.createGain();
+    grainGain.gain.value = 0.15;
+    source.connect(grainGain);
+    grainGain.connect(dryGain);
+    grainGain.connect(convolver);
+    source.start();
+
+    const interval = Math.max(10, 1000 / synthParams.granular.density);
+    const jitter = interval * 0.3 * (Math.random() * 2 - 1);
+    granularTimer = setTimeout(scheduleGrain, interval + jitter);
+
+    // Update grain viz
+    drawGrainViz();
+  }
+  scheduleGrain();
+}
+
+const grainPositions = [];
+function drawGrainViz() {
+  const canvas = document.getElementById('grain-viz');
+  if (!canvas) return;
+  const ctx2 = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx2.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg') || '#0a0a0f';
+  ctx2.fillRect(0, 0, w, h);
+
+  // Add new grain
+  grainPositions.push({ x: Math.random() * w, y: Math.random() * h, life: 1.0, size: synthParams.granular.size / 10 });
+  // Remove dead grains
+  for (let i = grainPositions.length - 1; i >= 0; i--) {
+    grainPositions[i].life -= 0.06;
+    if (grainPositions[i].life <= 0) grainPositions.splice(i, 1);
+  }
+  // Draw grains
+  grainPositions.forEach(g => {
+    const r = Math.max(1, g.size * g.life);
+    const alpha = g.life * 0.8;
+    ctx2.beginPath();
+    ctx2.arc(g.x, g.y, r, 0, Math.PI * 2);
+    ctx2.fillStyle = `hsla(260, 80%, 65%, ${alpha})`;
+    ctx2.fill();
+  });
+}
+
+function updateGRParam(param, val) {
+  val = parseFloat(val) || val;
+  const p = synthParams.granular;
+  const nodes = synthNodes.granular;
+  switch(param) {
+    case 'size': p.size = parseFloat(val); document.getElementById('gr-size-v').textContent = parseFloat(val) + ' ms'; break;
+    case 'density': p.density = parseFloat(val); document.getElementById('gr-density-v').textContent = parseFloat(val) + ' gr/s'; break;
+    case 'freq': p.freq = parseFloat(val); document.getElementById('gr-freq-v').textContent = parseFloat(val) + ' Hz'; break;
+    case 'pitchrand': p.pitchrand = parseFloat(val); document.getElementById('gr-pitch-v').textContent = parseFloat(val) + ' ct'; break;
+    case 'window': p.window = val; break;
+    case 'reverb':
+      p.reverb = parseFloat(val);
+      document.getElementById('gr-reverb-v').textContent = parseFloat(val).toFixed(2);
+      if (nodes) {
+        nodes.dryGain.gain.setTargetAtTime(1-parseFloat(val), audioCtx.currentTime, 0.05);
+        nodes.wetGain.gain.setTargetAtTime(parseFloat(val), audioCtx.currentTime, 0.05);
+      }
+      break;
+  }
+}
+
+/* ============================================================
+   7. SAMPLER (PCM Simulation)
+   ============================================================ */
+synthParams.sampler = { inst: 'piano', note: 57, loop: 'sustain', vel: 100, atk: 0.005, rel: 0.8, tune: 0, bright: 0 };
+
+// Instrument definition: complex FM/subtractive synthesis to simulate different instruments
+function createInstrumentBuffer(inst, freq, sampleRate) {
+  const dur = 4.0;
+  const len = Math.floor(sampleRate * dur);
+  const buf = audioCtx.createBuffer(1, len, sampleRate);
+  const data = buf.getChannelData(0);
+
+  for (let i = 0; i < len; i++) {
+    const t = i / sampleRate;
+    let s = 0;
+    const env = Math.exp(-t * (inst === 'pad' ? 0.3 : inst === 'strings' ? 0.5 : inst === 'marimba' ? 5 : inst === 'choir' ? 0.8 : 1.5));
+    const attack = Math.min(1, t / 0.01);
+
+    switch(inst) {
+      case 'piano': {
+        // Multiple partials with different decay rates
+        for (let h = 1; h <= 12; h++) {
+          const henv = Math.exp(-t * (h * 1.5 + 0.5));
+          s += Math.sin(2*Math.PI*freq*h*t) / h * henv;
+        }
+        // Key click
+        if (t < 0.005) s += (Math.random()*2-1) * 0.3;
+        break;
+      }
+      case 'strings': {
+        // Rich harmonics + slight detuning for ensemble
+        for (let h = 1; h <= 20; h++) {
+          const detune = 1 + (h % 3 === 0 ? 0.002 : 0);
+          s += Math.sin(2*Math.PI*freq*h*detune*t) / h * env;
+        }
+        break;
+      }
+      case 'choir': {
+        // Formant simulation
+        const formants = [800, 1200, 2700];
+        for (let h = 1; h <= 20; h++) {
+          let amp = 1/h;
+          formants.forEach(f => {
+            const hf = freq * h;
+            amp += 0.5 * Math.exp(-Math.pow(hf - f, 2) / (f * 100));
+          });
+          s += Math.sin(2*Math.PI*freq*h*t) * amp * env * 0.1;
+        }
+        break;
+      }
+      case 'marimba': {
+        // Inharmonic partials
+        for (let h = 1; h <= 6; h++) {
+          const inharm = h <= 2 ? 1 : h * 1.08;
+          s += Math.sin(2*Math.PI*freq*inharm*t) / h * Math.exp(-t * h * 8);
+        }
+        break;
+      }
+      case 'pad': {
+        // Lush pad - sine-heavy
+        for (let h = 1; h <= 8; h++) {
+          s += Math.sin(2*Math.PI*freq*h*(1 + Math.sin(2*Math.PI*0.5*t)*0.002)*t) / (h*h) * env;
+        }
+        s += Math.sin(2*Math.PI*freq*t) * 0.4 * env;
+        break;
+      }
+    }
+    data[i] = Math.tanh(s * attack * 0.5);
+  }
+  return buf;
+}
+
+function startSampler() {
+  const p = synthParams.sampler;
+  const midiNote = parseInt(p.note);
+  const freq = 440 * Math.pow(2, (midiNote - 69 + p.tune/100) / 12);
+
+  const instBuf = createInstrumentBuffer(p.inst, freq, audioCtx.sampleRate);
+  const source = audioCtx.createBufferSource();
+  source.buffer = instBuf;
+  source.loop = p.loop !== 'none';
+  if (source.loop) {
+    source.loopStart = 0.5;
+    source.loopEnd = instBuf.duration * 0.8;
+  }
+
+  const eq = audioCtx.createBiquadFilter();
+  eq.type = 'highshelf';
+  eq.frequency.value = 4000;
+  eq.gain.value = p.bright;
+
+  const amp = audioCtx.createGain();
+  amp.gain.value = 0;
+  const velGain = p.vel / 127;
+  const t = audioCtx.currentTime;
+  amp.gain.linearRampToValueAtTime(velGain * 0.8, t + p.atk);
+
+  source.connect(eq);
+  eq.connect(amp);
+  amp.connect(masterGain);
+  source.start();
+
+  synthNodes.sampler = { source, eq, amp };
+}
+
+function updateSampParam(param, val) {
+  const p = synthParams.sampler;
+  val = parseFloat(val) || val;
+  switch(param) {
+    case 'inst': p.inst = val; break;
+    case 'note':
+      p.note = parseInt(val);
+      const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+      const name = names[p.note % 12] + Math.floor(p.note/12 - 1);
+      const f = Math.round(440 * Math.pow(2, (p.note - 69) / 12));
+      document.getElementById('samp-note-v').textContent = name + ' (' + f + 'Hz)';
+      break;
+    case 'loop': p.loop = val; break;
+    case 'vel': p.vel = parseInt(val); document.getElementById('samp-vel-v').textContent = val; break;
+    case 'atk': p.atk = parseFloat(val); document.getElementById('samp-atk-v').textContent = parseFloat(val).toFixed(3) + ' s'; break;
+    case 'rel': p.rel = parseFloat(val); document.getElementById('samp-rel-v').textContent = parseFloat(val).toFixed(2) + ' s'; break;
+    case 'tune': p.tune = parseFloat(val); document.getElementById('samp-tune-v').textContent = parseFloat(val) + ' ct'; break;
+    case 'bright':
+      p.bright = parseFloat(val);
+      document.getElementById('samp-bright-v').textContent = parseFloat(val).toFixed(1) + ' dB';
+      if (synthNodes.sampler && synthNodes.sampler.eq)
+        synthNodes.sampler.eq.gain.setTargetAtTime(parseFloat(val), audioCtx.currentTime, 0.05);
+      break;
+  }
+}
+
+/* ============================================================
+   8. VECTORIAL
+   ============================================================ */
+synthParams.vector = { freq: 220, x: 0.5, y: 0.5, auto: 0, cutoff: 3000 };
+let vecAutoPhase = 0;
+
+// Initialize vector pad
+(function initVectorPad() {
+  const canvas = document.getElementById('vector-pad');
+  if (!canvas) return;
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
+    };
+  }
+
+  let isDragging = false;
+  canvas.addEventListener('mousedown', (e) => { isDragging = true; setVecXY(getPos(e)); });
+  canvas.addEventListener('touchstart', (e) => { isDragging = true; setVecXY(getPos(e)); e.preventDefault(); }, {passive:false});
+  canvas.addEventListener('mousemove', (e) => { if (isDragging) setVecXY(getPos(e)); });
+  canvas.addEventListener('touchmove', (e) => { if (isDragging) setVecXY(getPos(e)); e.preventDefault(); }, {passive:false});
+  document.addEventListener('mouseup', () => isDragging = false);
+  document.addEventListener('touchend', () => isDragging = false);
+
+  drawVecPad();
+})();
+
+function setVecXY(pos) {
+  synthParams.vector.x = pos.x;
+  synthParams.vector.y = pos.y;
+  updateVectorMix();
+  drawVecPad();
+}
+
+function drawVecPad() {
+  const canvas = document.getElementById('vector-pad');
+  if (!canvas) return;
+  const ctx2 = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const p = synthParams.vector;
+
+  ctx2.clearRect(0,0,w,h);
+
+  // Background gradient
+  const grad = ctx2.createRadialGradient(p.x*w, p.y*h, 0, w/2, h/2, w*0.7);
+  grad.addColorStop(0, 'rgba(124,106,245,0.2)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx2.fillStyle = grad;
+  ctx2.fillRect(0,0,w,h);
+
+  // Corner labels
+  ctx2.font = '10px Space Mono';
+  ctx2.fillStyle = '#7c6af5'; ctx2.fillText('A (Sine)', 4, 14);
+  ctx2.fillStyle = '#a855f7'; ctx2.fillText('B (Saw)', w-60, 14);
+  ctx2.fillStyle = '#4ade80'; ctx2.fillText('C (Sqr)', 4, h-4);
+  ctx2.fillStyle = '#06b6d4'; ctx2.fillText('D (Tri)', w-60, h-4);
+
+  // Grid
+  ctx2.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx2.lineWidth = 1;
+  [0.25, 0.5, 0.75].forEach(v => {
+    ctx2.beginPath(); ctx2.moveTo(v*w, 0); ctx2.lineTo(v*w, h); ctx2.stroke();
+    ctx2.beginPath(); ctx2.moveTo(0, v*h); ctx2.lineTo(w, v*h); ctx2.stroke();
+  });
+
+  // Cross lines from center to cursor
+  ctx2.strokeStyle = 'rgba(124,106,245,0.3)';
+  ctx2.lineWidth = 1;
+  ctx2.beginPath(); ctx2.moveTo(p.x*w, 0); ctx2.lineTo(p.x*w, h); ctx2.stroke();
+  ctx2.beginPath(); ctx2.moveTo(0, p.y*h); ctx2.lineTo(w, p.y*h); ctx2.stroke();
+
+  // Cursor
+  ctx2.beginPath();
+  ctx2.arc(p.x*w, p.y*h, 8, 0, Math.PI*2);
+  ctx2.fillStyle = 'rgba(124,106,245,0.8)';
+  ctx2.fill();
+  ctx2.strokeStyle = '#fff';
+  ctx2.lineWidth = 2;
+  ctx2.stroke();
+}
+
+function updateVectorMix() {
+  const p = synthParams.vector;
+  const x = p.x, y = p.y;
+  // Bilinear interpolation: A(NW), B(NE), C(SW), D(SE)
+  const aW = (1-x)*(1-y);
+  const bW = x*(1-y);
+  const cW = (1-x)*y;
+  const dW = x*y;
+
+  document.getElementById('v-a').textContent = Math.round(aW*100) + '%';
+  document.getElementById('v-b').textContent = Math.round(bW*100) + '%';
+  document.getElementById('v-c').textContent = Math.round(cW*100) + '%';
+  document.getElementById('v-d').textContent = Math.round(dW*100) + '%';
+
+  const nodes = synthNodes.vector;
+  if (nodes) {
+    nodes.gainA && nodes.gainA.gain.setTargetAtTime(aW, audioCtx.currentTime, 0.02);
+    nodes.gainB && nodes.gainB.gain.setTargetAtTime(bW, audioCtx.currentTime, 0.02);
+    nodes.gainC && nodes.gainC.gain.setTargetAtTime(cW, audioCtx.currentTime, 0.02);
+    nodes.gainD && nodes.gainD.gain.setTargetAtTime(dW, audioCtx.currentTime, 0.02);
+  }
+}
+
+function startVector() {
+  const p = synthParams.vector;
+  const oscA = audioCtx.createOscillator(); oscA.type = 'sine';
+  const oscB = audioCtx.createOscillator(); oscB.type = 'sawtooth';
+  const oscC = audioCtx.createOscillator(); oscC.type = 'square';
+  const oscD = audioCtx.createOscillator(); oscD.type = 'triangle';
+  [oscA, oscB, oscC, oscD].forEach(o => o.frequency.value = p.freq);
+
+  const gainA = audioCtx.createGain();
+  const gainB = audioCtx.createGain();
+  const gainC = audioCtx.createGain();
+  const gainD = audioCtx.createGain();
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = p.cutoff;
+
+  const amp = audioCtx.createGain();
+  amp.gain.value = 0;
+  amp.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.02);
+
+  [oscA,oscB,oscC,oscD].forEach((o,i) => {
+    const g = [gainA,gainB,gainC,gainD][i];
+    g.gain.value = 0.25;
+    o.connect(g);
+    g.connect(filter);
+  });
+  filter.connect(amp);
+  amp.connect(masterGain);
+  [oscA,oscB,oscC,oscD].forEach(o => o.start());
+
+  synthNodes.vector = { oscA,oscB,oscC,oscD,gainA,gainB,gainC,gainD,filter,amp };
+  updateVectorMix();
+
+  // Auto movement
+  if (p.auto > 0) {
+    function vecAutoTick() {
+      if (!synthState.vector) return;
+      if (synthParams.vector.auto > 0) {
+        vecAutoPhase += synthParams.vector.auto * 0.02;
+        const nx = 0.5 + 0.45 * Math.sin(vecAutoPhase);
+        const ny = 0.5 + 0.45 * Math.cos(vecAutoPhase * 0.7);
+        setVecXY({x:nx, y:ny});
+      }
+      setTimeout(vecAutoTick, 50);
+    }
+    vecAutoTick();
+  }
+}
+
+function updateVecParam(param, val) {
+  const p = synthParams.vector;
+  val = parseFloat(val);
+  const nodes = synthNodes.vector;
+  switch(param) {
+    case 'freq':
+      p.freq = val;
+      document.getElementById('vec-freq-v').textContent = val + ' Hz';
+      if (nodes) [nodes.oscA,nodes.oscB,nodes.oscC,nodes.oscD].forEach(o => o && o.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.02));
+      break;
+    case 'auto':
+      p.auto = val;
+      document.getElementById('vec-auto-v').textContent = val > 0 ? val.toFixed(2) + ' Hz' : 'Off';
+      if (val > 0 && synthState.vector) {
+        (function autoVecLoop() {
+          if (!synthState.vector || synthParams.vector.auto === 0) return;
+          vecAutoPhase += synthParams.vector.auto * 0.02;
+          const nx = 0.5 + 0.45 * Math.sin(vecAutoPhase);
+          const ny = 0.5 + 0.45 * Math.cos(vecAutoPhase * 0.7);
+          setVecXY({x:nx, y:ny});
+          setTimeout(autoVecLoop, 50);
+        })();
+      }
+      break;
+    case 'cutoff':
+      p.cutoff = val;
+      document.getElementById('vec-cutoff-v').textContent = val + ' Hz';
+      if (nodes && nodes.filter) nodes.filter.frequency.setTargetAtTime(val, audioCtx.currentTime, 0.02);
+      break;
+  }
+}
+
+/* ============================================================
+   9. SÍNTESIS ESPECTRAL
+   ============================================================ */
+const SPEC_BINS = 32;
+const spectralAmps = new Float32Array(SPEC_BINS);
+synthParams.spectral = { freq: 110, inharm: 0, blur: 0, freeze: 0 };
+
+// Initialize spectral editor
+setSpectralPreset('saw');
+
+(function initSpectralEditor() {
+  const canvas = document.getElementById('spectral-editor');
+  if (!canvas) return;
+  let painting = false;
+
+  function paint(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const x = (clientX - rect.left) / rect.width;
+    const y = 1 - (clientY - rect.top) / rect.height;
+    const bin = Math.max(0, Math.min(SPEC_BINS - 1, Math.floor(x * SPEC_BINS)));
+    spectralAmps[bin] = Math.max(0, Math.min(1, y));
+    drawSpectralEditor();
+    if (synthState.spectral) rebuildSpectralOscs();
+  }
+
+  canvas.addEventListener('mousedown', (e) => { painting = true; paint(e); });
+  canvas.addEventListener('touchstart', (e) => { painting = true; paint(e); e.preventDefault(); }, {passive:false});
+  canvas.addEventListener('mousemove', (e) => { if (painting) paint(e); });
+  canvas.addEventListener('touchmove', (e) => { if (painting) paint(e); e.preventDefault(); }, {passive:false});
+  document.addEventListener('mouseup', () => painting = false);
+  document.addEventListener('touchend', () => painting = false);
+
+  drawSpectralEditor();
+})();
+
+function drawSpectralEditor() {
+  const canvas = document.getElementById('spectral-editor');
+  if (!canvas) return;
+  const ctx2 = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx2.clearRect(0, 0, w, h);
+
+  const bw = w / SPEC_BINS;
+  for (let i = 0; i < SPEC_BINS; i++) {
+    const barH = spectralAmps[i] * h;
+    const hue = (i / SPEC_BINS) * 200 + 220;
+    const grad = ctx2.createLinearGradient(0, h - barH, 0, h);
+    grad.addColorStop(0, `hsla(${hue}, 80%, 65%, 0.9)`);
+    grad.addColorStop(1, `hsla(${hue}, 80%, 40%, 0.4)`);
+    ctx2.fillStyle = grad;
+    ctx2.fillRect(i * bw + 1, h - barH, bw - 2, barH);
+    // Bin number
+    if (i < 16) {
+      ctx2.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx2.font = '7px monospace';
+      ctx2.fillText(i+1, i*bw + 2, h - 2);
+    }
+  }
+}
+
+function setSpectralPreset(preset) {
+  const p = synthParams.spectral || {};
+  switch(preset) {
+    case 'saw':
+      for (let i = 0; i < SPEC_BINS; i++) spectralAmps[i] = 1 / (i + 1);
+      break;
+    case 'square':
+      for (let i = 0; i < SPEC_BINS; i++) spectralAmps[i] = (i % 2 === 0) ? 1 / (i + 1) : 0;
+      break;
+    case 'odd':
+      for (let i = 0; i < SPEC_BINS; i++) spectralAmps[i] = (i % 2 === 0) ? 1 / ((i/2)+1) : 0;
+      break;
+    case 'formant': {
+      const f1 = 6, f2 = 12, f3 = 20;
+      for (let i = 0; i < SPEC_BINS; i++) {
+        const d1 = Math.exp(-Math.pow(i-f1,2)/4);
+        const d2 = Math.exp(-Math.pow(i-f2,2)/6) * 0.6;
+        const d3 = Math.exp(-Math.pow(i-f3,2)/8) * 0.3;
+        spectralAmps[i] = Math.min(1, d1 + d2 + d3);
+      }
+      break;
+    }
+    case 'clear': spectralAmps.fill(0); break;
+    case 'random':
+      for (let i = 0; i < SPEC_BINS; i++) spectralAmps[i] = Math.random() * Math.exp(-i/10);
+      break;
+  }
+  drawSpectralEditor();
+  if (typeof synthState !== 'undefined' && synthState.spectral) rebuildSpectralOscs();
+}
+
+function rebuildSpectralOscs() {
+  const nodes = synthNodes.spectral;
+  if (!nodes || !nodes.oscNodes) return;
+  const p = synthParams.spectral;
+  nodes.oscNodes.forEach((osc, i) => {
+    if (nodes.gainNodes[i]) {
+      nodes.gainNodes[i].gain.setTargetAtTime(spectralAmps[i] / SPEC_BINS, audioCtx.currentTime, 0.02);
+    }
+    const freq = p.freq * (i + 1) * (1 + p.inharm * i * i * 0.01);
+    osc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.02);
+  });
+}
+
+function startSpectral() {
+  const p = synthParams.spectral;
+  const amp = audioCtx.createGain();
+  amp.gain.value = 0;
+  amp.gain.linearRampToValueAtTime(0.7, audioCtx.currentTime + 0.02);
+  amp.connect(masterGain);
+
+  const oscNodes = [], gainNodes = [];
+  for (let i = 0; i < SPEC_BINS; i++) {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sine';
+    const freq = p.freq * (i+1) * (1 + p.inharm * i * i * 0.01);
+    osc.frequency.value = freq;
+    g.gain.value = spectralAmps[i] / SPEC_BINS;
+    osc.connect(g);
+    g.connect(amp);
+    osc.start();
+    oscNodes.push(osc);
+    gainNodes.push(g);
+  }
+  synthNodes.spectral = { oscNodes, gainNodes, amp };
+}
+
+function updateSpecParam(param, val) {
+  const p = synthParams.spectral;
+  val = parseFloat(val);
+  switch(param) {
+    case 'freq':
+      p.freq = val;
+      document.getElementById('spec-freq-v').textContent = val + ' Hz';
+      rebuildSpectralOscs();
+      break;
+    case 'inharm':
+      p.inharm = val;
+      document.getElementById('spec-inharm-v').textContent = val.toFixed(3);
+      rebuildSpectralOscs();
+      break;
+    case 'blur':
+      p.blur = val;
+      document.getElementById('spec-blur-v').textContent = val.toFixed(2);
+      // Apply blur to spectral amps
+      if (val > 0) {
+        const blurred = new Float32Array(SPEC_BINS);
+        const w = Math.ceil(val * 5) + 1;
+        for (let i = 0; i < SPEC_BINS; i++) {
+          let sum = 0, n = 0;
+          for (let j = -w; j <= w; j++) {
+            const idx = i + j;
+            if (idx >= 0 && idx < SPEC_BINS) { sum += spectralAmps[idx]; n++; }
+          }
+          blurred[i] = sum / n;
+        }
+        for (let i = 0; i < SPEC_BINS; i++) spectralAmps[i] = spectralAmps[i] * (1-val) + blurred[i] * val;
+        drawSpectralEditor();
+        rebuildSpectralOscs();
+      }
+      break;
+    case 'freeze':
+      p.freeze = val;
+      document.getElementById('spec-freeze-v').textContent = val > 0.5 ? 'On' : 'Off';
+      break;
+  }
+}
+
+/* ============================================================
+   10. MODELADO FÍSICO (KARPLUS-STRONG)
+   ============================================================ */
+synthParams.physical = { freq: 220, damp: 0.99, excite: 'noise', body: 0.5, tension: 0, pos: 0.5 };
+
+function startPhysical() {
+  const p = synthParams.physical;
+  // Karplus-Strong via ScriptProcessor (deprecated but universal)
+  // Use AudioWorklet workaround with AudioBufferSourceNode trick
+  // Implementation: generate full buffer using KS algorithm
+  const dur = 6.0;
+  const sr = audioCtx.sampleRate;
+  const len = Math.floor(sr * dur);
+  const buffer = audioCtx.createBuffer(1, len, sr);
+  const data = buffer.getChannelData(0);
+
+  const delayLen = Math.floor(sr / p.freq);
+  const delayBuf = new Float32Array(delayLen);
+
+  // Fill delay line with excitation signal
+  const exciteLen = Math.min(delayLen, Math.floor(sr * 0.01));
+  for (let i = 0; i < exciteLen; i++) {
+    switch(p.excite) {
+      case 'noise':   delayBuf[i % delayLen] = Math.random() * 2 - 1; break;
+      case 'impulse': delayBuf[i % delayLen] = i === 0 ? 1 : 0; break;
+      case 'sine':    delayBuf[i % delayLen] = Math.sin(2*Math.PI*i/exciteLen); break;
+    }
+  }
+
+  // Run KS simulation
+  let writePtr = 0;
+  const dampVal = p.damp;
+  // Tension adds all-pass-like filter (simplified as interpolation)
+  for (let i = 0; i < len; i++) {
+    const readPtr = (writePtr - delayLen + delayBuf.length) % delayLen;
+    const nextPtr = (readPtr + 1) % delayLen;
+    // Interpolation based on tension/position
+    const alpha = p.pos;
+    const interp = delayBuf[readPtr] * (1 - alpha) + delayBuf[nextPtr] * alpha;
+    // Low-pass average filter (KS damping)
+    const prev = delayBuf[(readPtr - 1 + delayLen) % delayLen];
+    const filtered = dampVal * 0.5 * (interp + prev);
+    data[i] = filtered;
+    delayBuf[writePtr] = filtered;
+    writePtr = (writePtr + 1) % delayLen;
+  }
+
+  // Body resonator (simple IIR)
+  if (p.body > 0) {
+    const bodyFreq = p.freq * (2 + p.body * 4);
+    const r = 0.9;
+    const cosW = Math.cos(2 * Math.PI * bodyFreq / sr);
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    const bodyGain = p.body * 0.3;
+    for (let i = 0; i < len; i++) {
+      const y = (1-r)*data[i] - 2*r*cosW*y1 + r*r*y2;
+      y2 = y1; y1 = y;
+      data[i] += y * bodyGain;
+    }
+  }
+
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  const amp = audioCtx.createGain();
+  amp.gain.value = 0.8;
+  source.connect(amp);
+  amp.connect(masterGain);
+  source.start();
+
+  synthNodes.physical = { source, amp };
+
+  // When buffer ends, reset UI
+  source.onended = () => {
+    if (synthState.physical) stopSynth('physical');
+  };
+}
+
+function retriggerPhysical() {
+  ensureAudioCtx();
+  stopSynth('physical');
+  setTimeout(() => startSynth('physical'), 80);
+}
+
+function updatePHParam(param, val) {
+  const p = synthParams.physical;
+  val = parseFloat(val) || val;
+  switch(param) {
+    case 'freq': p.freq = parseFloat(val); document.getElementById('ph-freq-v').textContent = parseFloat(val) + ' Hz'; break;
+    case 'damp': p.damp = parseFloat(val); document.getElementById('ph-damp-v').textContent = parseFloat(val).toFixed(4); break;
+    case 'excite': p.excite = val; break;
+    case 'body': p.body = parseFloat(val); document.getElementById('ph-body-v').textContent = parseFloat(val).toFixed(2); break;
+    case 'tension': p.tension = parseFloat(val); document.getElementById('ph-tension-v').textContent = parseFloat(val).toFixed(2); break;
+    case 'pos': p.pos = parseFloat(val); document.getElementById('ph-pos-v').textContent = parseFloat(val).toFixed(2); break;
+  }
+}
+
+function setPHPreset(preset) {
+  const presets = {
+    guitar:    { freq: 82, damp: 0.9985, excite: 'noise', body: 0.5, pos: 0.5 },
+    bass:      { freq: 41, damp: 0.9990, excite: 'noise', body: 0.3, pos: 0.4 },
+    harp:      { freq: 220, damp: 0.9995, excite: 'impulse', body: 0.2, pos: 0.3 },
+    sitar:     { freq: 196, damp: 0.9980, excite: 'noise', body: 0.7, pos: 0.7 },
+    pizzicato: { freq: 440, damp: 0.9970, excite: 'impulse', body: 0.4, pos: 0.5 },
+    percuss:   { freq: 110, damp: 0.9960, excite: 'noise', body: 0.8, pos: 0.8 }
+  };
+  const pr = presets[preset];
+  if (!pr) return;
+  Object.entries(pr).forEach(([k,v]) => {
+    synthParams.physical[k] = v;
+    const el = document.getElementById('ph-'+k);
+    if (el) el.value = v;
+    const elv = document.getElementById('ph-'+k+'-v');
+    if (elv) {
+      if (k === 'freq') elv.textContent = v + ' Hz';
+      else if (k === 'damp') elv.textContent = v.toFixed(4);
+      else if (k === 'excite') {} // no display
+      else elv.textContent = typeof v === 'number' ? v.toFixed(2) : v;
+    }
+  });
+}
+
+/* ============================================================
+   VISUALIZER — OSCILLOSCOPE + FFT
+   ============================================================ */
+const scopeData = {};
+const fftData = {};
+let vizRunning = false;
+
+function startVisualizer(panelId) {
+  if (!vizRunning) {
+    vizRunning = true;
+    renderVisualizer();
+  }
+}
+
+function renderVisualizer() {
+  if (!audioCtx || !analyserScope) {
+    requestAnimationFrame(renderVisualizer);
+    return;
+  }
+
+  const scopeId = 'scope-' + currentPanel;
+  const fftId = 'fft-' + currentPanel;
+  const scopeCanvas = document.getElementById(scopeId);
+  const fftCanvas = document.getElementById(fftId);
+
+  // Oscilloscope
+  if (scopeCanvas) {
+    const ctx2 = scopeCanvas.getContext('2d');
+    const w = scopeCanvas.width, h = scopeCanvas.height;
+    const bufLen = analyserScope.frequencyBinCount;
+    const dataArr = new Float32Array(bufLen);
+    analyserScope.getFloatTimeDomainData(dataArr);
+
+    ctx2.clearRect(0,0,w,h);
+    ctx2.fillStyle = document.body.classList.contains('light') ? '#f0eff8' : '#0a0a0f';
+    ctx2.fillRect(0,0,w,h);
+
+    // Grid
+    ctx2.strokeStyle = 'rgba(124,106,245,0.1)';
+    ctx2.lineWidth = 1;
+    ctx2.beginPath(); ctx2.moveTo(0,h/2); ctx2.lineTo(w,h/2); ctx2.stroke();
+
+    // Waveform
+    ctx2.strokeStyle = '#7c6af5';
+    ctx2.lineWidth = 2;
+    ctx2.shadowBlur = 6;
+    ctx2.shadowColor = '#7c6af5';
+    ctx2.beginPath();
+    const sliceWidth = w / bufLen;
+    let x = 0;
+    for (let i = 0; i < bufLen; i++) {
+      const v = dataArr[i];
+      const y = (0.5 + v * 0.45) * h;
+      i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+      x += sliceWidth;
+    }
+    ctx2.stroke();
+    ctx2.shadowBlur = 0;
+  }
+
+  // FFT Spectrum
+  if (fftCanvas) {
+    const ctx2 = fftCanvas.getContext('2d');
+    const w = fftCanvas.width, h = fftCanvas.height;
+    const bufLen = analyserFFT.frequencyBinCount;
+    const dataArr = new Uint8Array(bufLen);
+    analyserFFT.getByteFrequencyData(dataArr);
+
+    ctx2.clearRect(0,0,w,h);
+    ctx2.fillStyle = document.body.classList.contains('light') ? '#f0eff8' : '#0a0a0f';
+    ctx2.fillRect(0,0,w,h);
+
+    const barCount = 64;
+    const barW = w / barCount;
+    for (let i = 0; i < barCount; i++) {
+      const binIdx = Math.floor(i / barCount * bufLen * 0.5);
+      const val = dataArr[binIdx] / 255;
+      const barH = val * h;
+      const hue = (i / barCount) * 120 + 200;
+      ctx2.fillStyle = `hsla(${hue}, 80%, 60%, ${0.6 + val * 0.4})`;
+      ctx2.fillRect(i * barW, h - barH, barW - 1, barH);
+    }
+  }
+
+  requestAnimationFrame(renderVisualizer);
+}
+
+/* ============================================================
+   MASTER VOLUME
+   ============================================================ */
+function setMasterVol(val) {
+  if (masterGain) masterGain.gain.setTargetAtTime(parseFloat(val), audioCtx.currentTime, 0.05);
+  document.getElementById('vol-v').textContent = Math.round(val * 100) + '%';
+}
+
+/* ============================================================
+   MINI KEYBOARD
+   ============================================================ */
+// One octave + 4 extra: C3 to E4 (MIDI 48–64)
+const KB_START = 48;
+const KB_END   = 72; // 2 octaves
+const KB_KEYS  = [];
+
+// Build note data
+const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const isBlack = n => [1,3,6,8,10].includes(n % 12);
+
+// Computer keyboard map → MIDI note offset
+const KEY_MAP = {
+  'a':0,'w':1,'s':2,'e':3,'d':4,'f':5,'t':6,'g':7,'y':8,'h':9,'u':10,'j':11,
+  'k':12,'o':13,'l':14,'p':15,';':16
+};
+
+let keyboardVisible = true;
+let kbBaseNote = KB_START; // can shift octave
+
+function toggleKeyboard() {
+  const bar = document.getElementById('keyboard-bar');
+  const btn = document.getElementById('kb-toggle');
+  const kb  = document.getElementById('mini-keyboard');
+  keyboardVisible = !keyboardVisible;
+  kb.style.display = keyboardVisible ? 'block' : 'none';
+  btn.textContent = keyboardVisible ? '▲ Ocultar' : '▼ Mostrar';
+  bar.style.height = keyboardVisible ? '' : '40px';
+}
+
+function buildMiniKeyboard() {
+  const container = document.getElementById('mini-keyboard');
+  if (!container) return;
+
+  const totalNotes = KB_END - KB_START;
+  // Count white keys
+  let whiteCount = 0;
+  for (let n = KB_START; n < KB_END; n++) {
+    if (!isBlack(n)) whiteCount++;
+  }
+
+  const containerW = container.offsetWidth || 600;
+  const whiteW = Math.floor(containerW / whiteCount);
+  const whiteH = 50;
+  const blackW = Math.floor(whiteW * 0.6);
+  const blackH = 30;
+
+  container.innerHTML = '';
+  container.style.position = 'relative';
+  container.style.height = whiteH + 'px';
+
+  let whiteX = 0;
+  const keyElements = {};
+
+  for (let n = KB_START; n < KB_END; n++) {
+    const black = isBlack(n);
+    const el = document.createElement('div');
+    el.className = black ? 'kb-black' : 'kb-white';
+    el.dataset.midi = n;
+
+    const noteName = noteNames[n % 12] + Math.floor(n/12 - 1);
+
+    if (!black) {
+      el.style.left = whiteX + 'px';
+      el.style.width = (whiteW - 1) + 'px';
+      el.style.height = whiteH + 'px';
+      // Keyboard hint
+      const kbKey = Object.keys(KEY_MAP).find(k => KEY_MAP[k] === (n - kbBaseNote));
+      if (kbKey !== undefined) {
+        const hint = document.createElement('span');
+        hint.className = 'kb-hint';
+        hint.textContent = kbKey.toUpperCase();
+        el.appendChild(hint);
+      }
+      whiteX += whiteW;
+    } else {
+      // Position black key over previous white key
+      el.style.left = (whiteX - Math.floor(blackW * 0.6)) + 'px';
+      el.style.width = blackW + 'px';
+      el.style.height = blackH + 'px';
+    }
+
+    // Events
+    const playNote = () => {
+      ensureAudioCtx();
+      el.classList.add('active');
+      const freq = 440 * Math.pow(2, (n - 69) / 12);
+      playKeyNote(freq, n);
+    };
+    const stopNote = () => {
+      el.classList.remove('active');
+      stopKeyNote(n);
+    };
+
+    el.addEventListener('mousedown', playNote);
+    el.addEventListener('touchstart', (e) => { playNote(); e.preventDefault(); }, {passive:false});
+    el.addEventListener('mouseup', stopNote);
+    el.addEventListener('mouseleave', stopNote);
+    el.addEventListener('touchend', stopNote);
+
+    container.appendChild(el);
+    keyElements[n] = el;
+    KB_KEYS.push({ n, el, freq: 440 * Math.pow(2, (n - 69) / 12) });
+  }
+
+  window._kbKeys = keyElements;
+}
+
+// Active keyboard notes
+const activeKeyNotes = {};
+
+function playKeyNote(freq, midiNote) {
+  if (!audioCtx) return;
+  // Stop if already playing
+  stopKeyNote(midiNote);
+
+  // Play using current synth's parameters but with overridden frequency
+  const id = currentPanel;
+  let noteNode = null;
+
+  switch(id) {
+    case 'subtractive': {
+      const p = synthParams.subtractive;
+      const osc = audioCtx.createOscillator();
+      const filter = audioCtx.createBiquadFilter();
+      const amp = audioCtx.createGain();
+      osc.type = p.wave;
+      osc.frequency.value = freq;
+      osc.detune.value = p.detune;
+      filter.type = p.filtertype;
+      filter.frequency.value = p.cutoff;
+      filter.Q.value = p.res;
+      amp.gain.value = 0;
+      amp.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + p.atk);
+      osc.connect(filter); filter.connect(amp); amp.connect(masterGain);
+      osc.start();
+      noteNode = { osc, filter, amp };
+      break;
+    }
+    case 'fm': {
+      const p = synthParams.fm;
+      const carrier = audioCtx.createOscillator();
+      const mod = audioCtx.createOscillator();
+      const modG = audioCtx.createGain();
+      const amp = audioCtx.createGain();
+      carrier.type = 'sine'; carrier.frequency.value = freq;
+      mod.type = 'sine'; mod.frequency.value = freq * p.ratio;
+      modG.gain.value = p.index;
+      amp.gain.value = 0;
+      amp.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + p.atk);
+      mod.connect(modG); modG.connect(carrier.frequency);
+      carrier.connect(amp); amp.connect(masterGain);
+      carrier.start(); mod.start();
+      noteNode = { carrier, mod, modG, amp };
+      break;
+    }
+    case 'additive': {
+      const p = synthParams.additive;
+      const masterA = audioCtx.createGain();
+      masterA.gain.value = 0;
+      masterA.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02);
+      masterA.connect(masterGain);
+      const oscs = [], gains = [];
+      for (let i = 0; i < HARMONIC_COUNT; i++) {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = freq * (i+1);
+        g.gain.value = harmonicAmps[i] / HARMONIC_COUNT;
+        o.connect(g); g.connect(masterA); o.start();
+        oscs.push(o); gains.push(g);
+      }
+      noteNode = { oscs, gains, gain: masterA };
+      break;
+    }
+    case 'physical': {
+      // Karplus-Strong for each key note
+      const p = synthParams.physical;
+      const sr = audioCtx.sampleRate;
+      const dur = 4.0;
+      const len = Math.floor(sr * dur);
+      const buf = audioCtx.createBuffer(1, len, sr);
+      const data = buf.getChannelData(0);
+      const dLen = Math.max(2, Math.floor(sr / freq));
+      const dBuf = new Float32Array(dLen);
+      const eLen = Math.min(dLen, Math.floor(sr * 0.005));
+      for (let i = 0; i < eLen; i++) dBuf[i] = Math.random() * 2 - 1;
+      let wPtr = 0;
+      for (let i = 0; i < len; i++) {
+        const rPtr = (wPtr - dLen + dLen) % dLen;
+        const prev = dBuf[(rPtr - 1 + dLen) % dLen];
+        const filtered = p.damp * 0.5 * (dBuf[rPtr] + prev);
+        data[i] = filtered;
+        dBuf[wPtr] = filtered;
+        wPtr = (wPtr + 1) % dLen;
+      }
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      const amp = audioCtx.createGain();
+      amp.gain.value = 0.8;
+      src.connect(amp); amp.connect(masterGain);
+      src.start();
+      noteNode = { src, amp };
+      break;
+    }
+    default: {
+      // Generic: subtractive with current panel frequency override
+      const osc = audioCtx.createOscillator();
+      const amp = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      osc.type = 'sawtooth'; osc.frequency.value = freq;
+      filter.type = 'lowpass'; filter.frequency.value = 2000; filter.Q.value = 2;
+      amp.gain.value = 0;
+      amp.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.01);
+      osc.connect(filter); filter.connect(amp); amp.connect(masterGain);
+      osc.start();
+      noteNode = { osc, filter, amp };
+    }
+  }
+
+  activeKeyNotes[midiNote] = noteNode;
+}
+
+function stopKeyNote(midiNote) {
+  const noteNode = activeKeyNotes[midiNote];
+  if (!noteNode || !audioCtx) return;
+
+  const t = audioCtx.currentTime + 0.1;
+
+  // Get release from current panel
+  const relMap = {
+    subtractive: synthParams.subtractive?.rel || 0.3,
+    fm: synthParams.fm?.dec || 0.3,
+    additive: 0.3,
+    physical: 0.1,
+  };
+  const rel = relMap[currentPanel] || 0.2;
+
+  // Find and fade out gain nodes
+  const flatNodes = [];
+  Object.values(noteNode).forEach(n => {
+    if (!n) return;
+    if (Array.isArray(n)) n.forEach(x => x && flatNodes.push(x));
+    else flatNodes.push(n);
+  });
+
+  flatNodes.forEach(n => {
+    try {
+      if (n.gain && n.gain.linearRampToValueAtTime) {
+        n.gain.cancelScheduledValues(audioCtx.currentTime);
+        n.gain.setValueAtTime(n.gain.value, audioCtx.currentTime);
+        n.gain.linearRampToValueAtTime(0, audioCtx.currentTime + rel);
+      }
+    } catch(e){}
+  });
+
+  setTimeout(() => {
+    flatNodes.forEach(n => {
+      try { n.stop && n.stop(0); } catch(e){}
+      try { n.disconnect && n.disconnect(); } catch(e){}
+    });
+  }, (rel + 0.15) * 1000);
+
+  delete activeKeyNotes[midiNote];
+}
+
+/* ============================================================
+   COMPUTER KEYBOARD SUPPORT
+   ============================================================ */
+const pressedKeys = new Set();
+
+document.addEventListener('keydown', (e) => {
+  if (e.repeat || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  const key = e.key.toLowerCase();
+
+  // Octave shift
+  if (key === 'z') { kbBaseNote = Math.max(24, kbBaseNote - 12); rebuildKBHints(); return; }
+  if (key === 'x') { kbBaseNote = Math.min(84, kbBaseNote + 12); rebuildKBHints(); return; }
+
+  if (KEY_MAP[key] === undefined) return;
+  if (pressedKeys.has(key)) return;
+  pressedKeys.add(key);
+
+  ensureAudioCtx();
+  const midiNote = kbBaseNote + KEY_MAP[key];
+  const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+  playKeyNote(freq, midiNote);
+
+  // Visual highlight
+  const keyEl = window._kbKeys && window._kbKeys[midiNote];
+  if (keyEl) keyEl.classList.add('active');
+});
+
+document.addEventListener('keyup', (e) => {
+  const key = e.key.toLowerCase();
+  if (KEY_MAP[key] === undefined) return;
+  pressedKeys.delete(key);
+  const midiNote = kbBaseNote + KEY_MAP[key];
+  stopKeyNote(midiNote);
+  const keyEl = window._kbKeys && window._kbKeys[midiNote];
+  if (keyEl) keyEl.classList.remove('active');
+});
+
+function rebuildKBHints() {
+  // Rebuild keyboard with new base note hints
+  buildMiniKeyboard();
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('load', () => {
+  drawVecPad();
+  drawWavetableViz();
+  drawSpectralEditor();
+  startVisualizer('subtractive');
+  // Build keyboard after layout
+  setTimeout(buildMiniKeyboard, 100);
+  window.addEventListener('resize', () => setTimeout(buildMiniKeyboard, 100));
+});
+
+// Handle iOS audio context unlock
+document.addEventListener('touchstart', ensureAudioCtx, { once: true });
+</script>
+</body>
+</html>
